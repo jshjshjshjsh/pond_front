@@ -1,48 +1,29 @@
-import { useState, useEffect } from 'react'
-import axios from 'axios';
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import MainPage from './MainPage';
+import LoginPage from './user/LoginPage';
+import RegisterPage from './user/RegisterPage';
+import Header from './common/Header';
+import Footer from './common/Footer'; // 1. Footer 컴포넌트 import
 
 function App() {
-  const [count, setCount] = useState(0)
-  const [data, setData] = useState('');
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+            <Header />
 
-  useEffect(() => {
-    axios.get('/api/hello')
-      .then(response => {
-        setData(response.data);
-      })
-      .catch(error => {
-        console.error('Error fetching data: ', error);
-      });
-  }, []);
+            <main style={{ flex: 1 }}>
+                {/* 페이지 경로에 따라 다른 컴포넌트가 이 위치에 렌더링됩니다. */}
+                <Routes>
+                    <Route path="/" element={<MainPage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                </Routes>
+            </main>
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-        <p>Data from server: {data}</p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+            {/* 2. Routes 바깥에 Footer를 배치하여 모든 페이지에 공통으로 보이게 합니다. */}
+            <Footer />
+        </div>
+    );
 }
 
-export default App
+export default App;
