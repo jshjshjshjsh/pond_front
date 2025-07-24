@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 // 스타일 객체
 const headerStyle = {
@@ -67,10 +68,31 @@ const Header = () => {
     }, []);
 
     // 로그아웃 처리 함수
-    const handleLogout = () => {
-        localStorage.removeItem('accessToken'); // 토큰 삭제
-        setIsLoggedIn(false);
-        navigate('/'); // 메인 페이지로 이동
+    const handleLogout = async () => {
+        const token = localStorage.getItem('accessToken');
+
+        try {
+            if (token) {
+                // 1. 서버에 로그아웃 요청을 보냅니다.
+                // Spring Security의 기본 logout은 주로 POST 요청을 처리합니다.
+                await axios.post('http://localhost:8080/logout', {}, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                console.log('서버에 로그아웃 요청을 보냈습니다.');
+            }
+        } catch (error) {
+            // 서버에 /logout 엔드포인트가 없거나 CORS 문제 등으로 에러가 발생할 수 있습니다.
+            // 클라이언트 측에서는 에러 발생 여부와 관계없이 로그아웃을 계속 진행합니다.
+            console.error('서버 로그아웃 처리 중 오류 발생:', error);
+        } finally {
+            // 2. 서버 요청 결과와 상관없이 항상 클라이언트 측의 로그아웃을 수행합니다.
+            localStorage.removeItem('accessToken');
+            setIsLoggedIn(false);
+            alert('로그아웃 되었습니다.');
+            navigate('/');
+        }
     };
 
     return (
