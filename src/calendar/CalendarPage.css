@@ -115,3 +115,98 @@ input:checked + .slider:before { transform: translateX(22px); }
 .slider.round:before { border-radius: 50%; }
 .event-form .submit-btn { background-color: #008080; color: white; padding: 14px; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: background-color 0.3s ease; margin-top: 10px; }
 .event-form .submit-btn:hover { background-color: #006666; }
+
+.event-form .form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.event-form .action-btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+/* 수정 버튼 (기본) */
+.action-btn.update-btn {
+    background-color: #008080;
+    color: white;
+    border-color: #008080;
+}
+.action-btn.update-btn:hover {
+    background-color: #006666;
+    border-color: #006666;
+}
+
+/* 삭제 버튼 */
+.action-btn.delete-btn {
+    background-color: #fcebeb; /* 연한 빨강 배경 */
+    color: #c53030; /* 진한 빨강 텍스트 */
+    border-color: #fcebeb;
+}
+.action-btn.delete-btn:hover {
+    background-color: #f9dede;
+    border-color: #f9dede;
+    color: #9b2c2c;
+}
+
+/* 취소 버튼 */
+.action-btn.cancel-btn {
+    background-color: #e2e8f0; /* 연한 회색 */
+    color: #4a5568; /* 진한 회색 텍스트 */
+    border-color: #e2e8f0;
+}
+.action-btn.cancel-btn:hover {
+    background-color: #cbd5e0;
+    border-color: #cbd5e0;
+}
+
+.event-form textarea {
+    padding: 14px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: 'Noto Sans KR', 'Poppins', sans-serif;
+    transition: border-color 0.2s;
+    resize: vertical; /* 세로 크기만 조절 가능하도록 설정 */
+}
+
+.event-form textarea:focus {
+    outline: none;
+    border-color: #008080;
+}
+
+.toolbar-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+}
+
+.week-nav-buttons {
+    margin-left: 20px;
+    display: flex;
+    gap: 8px;
+}
+
+.week-nav-buttons button {
+    background: #f0f0f0;
+    border: 1px solid #e0e0e0;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.week-nav-buttons button:hover {
+    background-color: #e5e5e5;
+    border-color: #ccc;
+}
