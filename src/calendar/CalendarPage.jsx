@@ -43,16 +43,19 @@ const CalendarPage = () => {
     const navigate = useNavigate();
     const token = localStorage.getItem('accessToken');
 
-    // ✨ 여기가 핵심 1: 캘린더 데이터(events, currentDate)가 변경될 때마다 실행됩니다.
+    // TODO: 좌우 화살표를 누르면 원래 문제 발생, 한 주씩 이동하는 기능 추가 해야함
+    // ✨ 여기가 핵심: 캘린더 데이터가 변경될 때마다 실행
     useEffect(() => {
-        // 모든 '.rbc-month-row' 요소를 찾습니다.
-        const monthRows = document.querySelectorAll('.rbc-month-row');
-
-        // 찾은 각 요소에 'loaded' 클래스를 추가합니다.
-        monthRows.forEach(row => {
-            row.classList.add('loaded');
+        // requestAnimationFrame을 중첩 사용하여 모든 렌더링이 끝난 후 실행되도록 보장
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                const monthRows = document.querySelectorAll('.rbc-month-row');
+                monthRows.forEach(row => {
+                    row.classList.add('loaded');
+                });
+            });
         });
-    }, [events, currentDate]); // events나 currentDate가 바뀔 때마다 이 효과를 다시 실행합니다.
+    }, [events, currentDate]); // events나 currentDate가 바뀔 때마다 다시 실행
 
 
     const fetchEvents = useCallback(async (date) => {

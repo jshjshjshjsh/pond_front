@@ -48,7 +48,7 @@
 /* ✨ 최종 높이 및 +more 문제 해결 코드 ✨                         */
 /* =============================================================== */
 
-/* 캘린더 기본 스타일 */
+/* 1. 캘린더의 전체 높이는 자동으로 설정합니다. */
 .rbc-calendar {
     height: auto;
     border-radius: 16px;
@@ -58,15 +58,29 @@
     background-color: white;
 }
 
-/* ✨ 여기가 핵심: '.rbc-month-row'에 '.loaded' 클래스가 추가된 후에만 스타일을 적용합니다. */
-.rbc-month-row.loaded {
-    min-height: 120px; /* 요청하신 최소 높이 */
-    height: auto;      /* 내용은 높이에 맞춰 자동으로 늘어남 */
-    overflow: visible; /* 내용이 넘쳐도 보이도록 함 */
-    flex: none;        /* 불필요한 flex 속성 초기화 */
+/* 2. 라이브러리가 사용하는 flex 높이 계산을 무력화합니다. (가장 중요!) */
+.rbc-month-view {
+    display: block; /* flex 대신 block으로 변경 */
+    height: auto;
 }
 
-/* '+more' 링크는 항상 보이지 않도록 처리합니다. */
+.loaded{
+    height:auto;
+}
+
+/* 3. 각 행(week)의 최소 높이를 120px로 설정하고, 내용이 많아지면 늘어나도록 합니다. */
+.rbc-month-row {
+    min-height: 120px;
+    overflow: visible; /* 내용이 넘쳐도 보이도록 함 */
+}
+
+/* 4. 날짜 칸(cell) 안의 내용물(이벤트)이 들어가는 영역의 높이 제약을 해제합니다. */
+.rbc-row-content {
+    height: auto;
+    min-height: 90px; /* 120px에서 헤더 높이를 뺀 값 */
+}
+
+/* 5. '+more' 링크는 항상 숨깁니다. */
 .rbc-show-more {
     display: none !important;
 }
