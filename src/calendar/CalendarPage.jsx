@@ -6,7 +6,6 @@ import format from 'date-fns/format';
 import parse from 'date-fns/parse';
 import startOfWeek from 'date-fns/startOfWeek';
 import getDay from 'date-fns/getDay';
-import { addWeeks, subWeeks } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './CalendarPage.css';
@@ -16,7 +15,7 @@ import { useCalendarEvents } from './useCalendarEvents';
 const locales = { 'ko': ko };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
-const CustomToolbar = ({ label, onNavigate, onPrevWeek, onNextWeek }) => {
+const CustomToolbar = ({ label, onNavigate }) => {
     return (
         <div className="custom-toolbar">
             <div className="toolbar-nav-buttons">
@@ -26,10 +25,6 @@ const CustomToolbar = ({ label, onNavigate, onPrevWeek, onNextWeek }) => {
             </div>
             <div className="toolbar-center">
                 <span className="toolbar-label">{label}</span>
-                <div className="week-nav-buttons">
-                    <button type="button" onClick={onPrevWeek}>이전 주</button>
-                    <button type="button" onClick={onNextWeek}>다음 주</button>
-                </div>
             </div>
             <div className="toolbar-nav-buttons"></div>
         </div>
@@ -48,6 +43,8 @@ const CalendarPage = () => {
     const { events, fetchEvents, saveEvent, updateEvent, deleteEvent } = useCalendarEvents(token);
 
     useEffect(() => { fetchEvents(currentDate); }, [currentDate, fetchEvents]);
+
+    // ✨ 요청하신 코드 복원
     useEffect(() => {
         requestAnimationFrame(() => requestAnimationFrame(() => {
             document.querySelectorAll('.rbc-month-row').forEach(row => row.classList.add('loaded'));
@@ -61,30 +58,27 @@ const CalendarPage = () => {
         setFormState(initialFormState);
     };
 
-    // ✨ 문제 해결: useCallback을 사용하여 함수를 메모이제이션하고,
-    // 상태 업데이트 시 함수형 업데이트를 사용하여 항상 최신 상태를 참조하도록 합니다.
-    const handleNavigate = useCallback((actionOrDate) => {
-        handleCancel();
-        if (typeof actionOrDate === 'string') {
-            setCurrentDate(current => {
+    // ✨ 문제 해결: 월 이동 시 tempStart가 초기화되지 않도록 handleCancel() 호출을 제거
+    const handleNavigate = (newDateOrAction) => {
+        setCurrentDate(current => {
+            if (typeof newDateOrAction === 'string') {
                 const newDate = new Date(current);
-                if (actionOrDate === 'PREV') newDate.setMonth(newDate.getMonth() - 1);
-                if (actionOrDate === 'NEXT') newDate.setMonth(newDate.getMonth() + 1);
-                if (actionOrDate === 'TODAY') return new Date();
+                if (newDateOrAction === 'PREV') newDate.setMonth(newDate.getMonth() - 1);
+                if (newDateOrAction === 'NEXT') newDate.setMonth(newDate.getMonth() + 1);
+                if (newDateOrAction === 'TODAY') {
+                    handleCancel(); // '오늘' 버튼을 누를 때만 선택을 초기화
+                    return new Date();
+                }
                 return newDate;
-            });
-        } else {
-            setCurrentDate(actionOrDate);
-        }
-    }, []);
-
-    const goToPrevWeek = useCallback(() => setCurrentDate(current => subWeeks(current, 1)), []);
-    const goToNextWeek = useCallback(() => setCurrentDate(current => addWeeks(current, 1)), []);
+            }
+            return newDateOrAction;
+        });
+    };
 
     const handleSelectSlot = useCallback(({ start, action }) => {
-        handleCancel();
         if (action === 'click') {
             if (!tempStart) {
+                handleCancel(); // 새로운 선택을 시작할 때만 모든 상태를 초기화
                 setTempStart(start);
             } else {
                 setSelection({ start: new Date(Math.min(tempStart.getTime(), start.getTime())), end: new Date(Math.max(tempStart.getTime(), start.getTime())) });
@@ -143,7 +137,6 @@ const CalendarPage = () => {
         }
     };
 
-    // ✨ 선택된 일정 하이라이트 스타일 개선
     const eventPropGetter = useCallback(
         (event) => {
             const isSelected = selectedEvent?.id === event.id;
@@ -160,8 +153,8 @@ const CalendarPage = () => {
                 style.border = '2px solid #50E3C2';
             }
             if (isSelected) {
-                style.backgroundColor = '#005f5f'; // 더 진한 배경색
-                style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)'; // 더 강한 그림자
+                style.backgroundColor = '#005f5f';
+                style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
             }
 
             return { style };
@@ -184,17 +177,15 @@ const CalendarPage = () => {
         return '날짜를 클릭하여 기간을 선택하세요.';
     };
 
-    // useMemo 최적화를 제거하여 컴포넌트가 항상 최신 props를 받도록 합니다.
-    const calendarFormats = {
-        monthHeaderFormat: 'yyyy년 MMMM',
-        dayHeaderFormat: 'eee',
-    };
-    const calendarMessages = {
-        today: '오늘', previous: '이전', next: '다음', month: '월',
-        week: '주', day: '일', agenda: '일정',
-        noEventsInRange: '해당 기간에 일정이 없습니다.',
-        showMore: total => `+${total}개 더보기`,
-    };
+    const { formats, messages } = useMemo(() => ({
+        formats: { monthHeaderFormat: 'yyyy년 MMMM', dayHeaderFormat: 'eee' },
+        messages: {
+            today: '오늘', previous: '이전', next: '다음', month: '월',
+            week: '주', day: '일', agenda: '일정',
+            noEventsInRange: '해당 기간에 일정이 없습니다.',
+            showMore: total => `+${total}개 더보기`,
+        }
+    }), []);
 
     return (
         <div className="calendar-page-container">
@@ -203,19 +194,9 @@ const CalendarPage = () => {
                     <Calendar
                         localizer={localizer}
                         events={events}
-                        // ✨ CustomToolbar에 이동 함수를 직접 전달
-                        components={{
-                            toolbar: (props) => (
-                                <CustomToolbar
-                                    {...props}
-                                    onNavigate={handleNavigate}
-                                    onPrevWeek={goToPrevWeek}
-                                    onNextWeek={goToNextWeek}
-                                />
-                            ),
-                        }}
-                        formats={calendarFormats}
-                        messages={calendarMessages}
+                        components={{ toolbar: CustomToolbar }}
+                        formats={formats}
+                        messages={messages}
                         culture='ko'
                         startAccessor="start"
                         endAccessor="end"
@@ -233,7 +214,7 @@ const CalendarPage = () => {
                     <div className="event-form-container">
                         <h3>{selectedEvent ? '일정 수정' : '새 일정 추가'}</h3>
                         <p className="selection-display"><strong>{renderSelectionText()}</strong></p>
-                        {(selection.start || selectedEvent) && (
+                        {(selection.start || selectedEvent || tempStart) && (
                             <form onSubmit={handleSubmit} className="event-form">
                                 <div className="input-group">
                                     <label htmlFor="title">일정 제목</label>
