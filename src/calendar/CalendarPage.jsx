@@ -39,12 +39,14 @@ const CalendarPage = () => {
     const initialFormState = { title: '', content: '', isShare: true };
     const [formState, setFormState] = useState(initialFormState);
 
+    // ✨ 날짜 재선택 모드를 관리하는 상태 추가
+    const [isReselecting, setIsReselecting] = useState(false);
+
     const token = localStorage.getItem('accessToken');
     const { events, fetchEvents, saveEvent, updateEvent, deleteEvent } = useCalendarEvents(token);
 
     useEffect(() => { fetchEvents(currentDate); }, [currentDate, fetchEvents]);
 
-    // ✨ 요청하신 코드 복원
     useEffect(() => {
         requestAnimationFrame(() => requestAnimationFrame(() => {
             document.querySelectorAll('.rbc-month-row').forEach(row => row.classList.add('loaded'));
@@ -56,9 +58,9 @@ const CalendarPage = () => {
         setSelection({ start: null, end: null });
         setTempStart(null);
         setFormState(initialFormState);
+        setIsReselecting(false); // 취소 시 재선택 모드 해제
     };
 
-    // ✨ 문제 해결: 월 이동 시 tempStart가 초기화되지 않도록 handleCancel() 호출을 제거
     const handleNavigate = (newDateOrAction) => {
         setCurrentDate(current => {
             if (typeof newDateOrAction === 'string') {
@@ -66,7 +68,7 @@ const CalendarPage = () => {
                 if (newDateOrAction === 'PREV') newDate.setMonth(newDate.getMonth() - 1);
                 if (newDateOrAction === 'NEXT') newDate.setMonth(newDate.getMonth() + 1);
                 if (newDateOrAction === 'TODAY') {
-                    handleCancel(); // '오늘' 버튼을 누를 때만 선택을 초기화
+                    handleCancel();
                     return new Date();
                 }
                 return newDate;
@@ -75,24 +77,35 @@ const CalendarPage = () => {
         });
     };
 
+    // ✨ 문제 해결: 날짜 재선택 로직 수정
     const handleSelectSlot = useCallback(({ start, action }) => {
         if (action === 'click') {
+            // 새 일정 생성이거나, 기존 일정의 날짜를 재선택하는 경우
             if (!tempStart) {
-                handleCancel(); // 새로운 선택을 시작할 때만 모든 상태를 초기화
+                if (!isReselecting) handleCancel(); // 새 일정 시작 시에만 초기화
                 setTempStart(start);
             } else {
                 setSelection({ start: new Date(Math.min(tempStart.getTime(), start.getTime())), end: new Date(Math.max(tempStart.getTime(), start.getTime())) });
                 setTempStart(null);
+                setIsReselecting(false); // 날짜 선택 완료 후 재선택 모드 해제
             }
         }
-    }, [tempStart]);
+    }, [tempStart, isReselecting]);
 
     const handleSelectEvent = useCallback((event) => {
         setSelectedEvent(event);
         setSelection({ start: event.start, end: event.end });
         setTempStart(null);
         setFormState({ title: event.title, content: event.content || '', isShare: event.isShare !== false });
+        setIsReselecting(false);
     }, []);
+
+    // 날짜 변경 시작을 위한 함수
+    const handleChangeDateClick = () => {
+        setIsReselecting(true); // 재선택 모드 활성화
+        setSelection({ start: null, end: null });
+        setTempStart(null);
+    };
 
     const handleFormChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -102,7 +115,7 @@ const CalendarPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formState.title.trim() || !selection.start || !selection.end) {
-            alert('일정 제목을 입력하고 날짜를 선택해주세요.');
+            alert('일정 제목과 날짜를 모두 올바르게 입력해주세요.');
             return;
         }
         const adjustedEndDate = new Date(selection.end);
@@ -149,14 +162,11 @@ const CalendarPage = () => {
                 transition: 'all 0.2s ease',
             };
 
-            if (event.isShare) {
-                style.border = '2px solid #50E3C2';
-            }
+            if (event.isShare) style.border = '2px solid #50E3C2';
             if (isSelected) {
                 style.backgroundColor = '#005f5f';
                 style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
             }
-
             return { style };
         },
         [selectedEvent]
@@ -174,6 +184,8 @@ const CalendarPage = () => {
     const renderSelectionText = () => {
         if (selection.start && selection.end) return `선택 기간: ${format(selection.start, 'yyyy-MM-dd')} ~ ${format(selection.end, 'yyyy-MM-dd')}`;
         if (tempStart) return `시작일: ${format(tempStart, 'yyyy-MM-dd')} (종료일을 선택하세요)`;
+        if (selectedEvent && isReselecting) return '새로운 날짜 범위를 선택하세요.';
+        if (selectedEvent) return `기존 기간: ${format(selectedEvent.start, 'yyyy-MM-dd')} ~ ${format(selectedEvent.end, 'yyyy-MM-dd')}`;
         return '날짜를 클릭하여 기간을 선택하세요.';
     };
 
@@ -214,8 +226,15 @@ const CalendarPage = () => {
                     <div className="event-form-container">
                         <h3>{selectedEvent ? '일정 수정' : '새 일정 추가'}</h3>
                         <p className="selection-display"><strong>{renderSelectionText()}</strong></p>
+
                         {(selection.start || selectedEvent || tempStart) && (
                             <form onSubmit={handleSubmit} className="event-form">
+                                {/* 날짜 변경 버튼은 폼 안으로 이동 */}
+                                {selectedEvent && (
+                                    <button type="button" className="action-btn change-date-btn" onClick={handleChangeDateClick}>
+                                        날짜 변경
+                                    </button>
+                                )}
                                 <div className="input-group">
                                     <label htmlFor="title">일정 제목</label>
                                     <input type="text" id="title" name="title" value={formState.title} onChange={handleFormChange} placeholder="무엇을 하셨나요?" required />

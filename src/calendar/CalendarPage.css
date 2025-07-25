@@ -210,3 +210,16 @@ input:checked + .slider:before { transform: translateX(22px); }
     background-color: #e5e5e5;
     border-color: #ccc;
 }
+
+.action-btn.change-date-btn {
+    width: 100%;
+    margin-bottom: 20px;
+    background-color: #f0f8ff;
+    color: #4682b4;
+    border-color: #f0f8ff;
+}
+
+.action-btn.change-date-btn:hover {
+    background-color: #e6f2ff;
+    border-color: #e6f2ff;
+}
