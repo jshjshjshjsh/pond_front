@@ -15,13 +15,25 @@ import { useCalendarEvents } from './useCalendarEvents';
 const locales = { 'ko': ko };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
-const CustomToolbar = ({ label, onNavigate }) => {
+/**
+ * ✨ 1. CustomToolbar 컴포넌트 수정 ✨
+ * * 월 이동이 시작되는 시점을 알려주는 onNavigationStart 함수를 props로 받습니다.
+ * 사용자가 이전/오늘/다음 버튼을 클릭하면, onNavigationStart를 먼저 실행하여
+ * 'loaded' 클래스를 제거한 후, 실제 월 이동(onNavigate)을 실행합니다.
+ */
+const CustomToolbar = ({ label, onNavigate, onNavigationStart }) => {
+
+    const handleNavClick = (action) => {
+        onNavigationStart(); // 월 이동 시작 전 클래스 제거 함수 호출
+        onNavigate(action);  // 기존의 월 이동 함수 호출
+    };
+
     return (
         <div className="custom-toolbar">
             <div className="toolbar-nav-buttons">
-                <button type="button" onClick={() => onNavigate('PREV')}>&lt;</button>
-                <button type="button" onClick={() => onNavigate('TODAY')}>오늘</button>
-                <button type="button" onClick={() => onNavigate('NEXT')}>&gt;</button>
+                <button type="button" onClick={() => handleNavClick('PREV')}>&lt;</button>
+                <button type="button" onClick={() => handleNavClick('TODAY')}>오늘</button>
+                <button type="button" onClick={() => handleNavClick('NEXT')}>&gt;</button>
             </div>
             <div className="toolbar-center">
                 <span className="toolbar-label">{label}</span>
@@ -38,27 +50,47 @@ const CalendarPage = () => {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const initialFormState = { title: '', content: '', isShare: true };
     const [formState, setFormState] = useState(initialFormState);
-
-    // ✨ 날짜 재선택 모드를 관리하는 상태 추가
     const [isReselecting, setIsReselecting] = useState(false);
 
     const token = localStorage.getItem('accessToken');
     const { events, fetchEvents, saveEvent, updateEvent, deleteEvent } = useCalendarEvents(token);
 
-    useEffect(() => { fetchEvents(currentDate); }, [currentDate, fetchEvents]);
-
     useEffect(() => {
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-            document.querySelectorAll('.rbc-month-row').forEach(row => row.classList.add('loaded'));
-        }));
-    }, [events, currentDate]);
+        fetchEvents(currentDate);
+    }, [currentDate, fetchEvents]);
+
+    /**
+     * ✨ 2. 월 이동 시작 시 'loaded' 클래스를 제거하는 함수 ✨
+     * * 이 함수는 CustomToolbar의 버튼이 클릭될 때 호출됩니다.
+     */
+    const handleNavigationStart = useCallback(() => {
+        document.querySelectorAll('.rbc-month-row').forEach(row => {
+            row.classList.remove('loaded');
+        });
+    }, []);
+
+    /**
+     * ✨ 3. 월 이동 완료 후 'loaded' 클래스를 추가하는 로직 ✨
+     * * 월(currentDate)이 바뀌거나 이벤트가 업데이트되면, 캘린더 렌더링이 끝난 후
+     * 'loaded' 클래스를 다시 추가하여 높이 문제를 해결합니다.
+     */
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            document.querySelectorAll('.rbc-month-row').forEach(row => {
+                row.classList.add('loaded');
+            });
+        }, 10); // 미세한 지연으로 렌더링 완료를 보장합니다.
+
+        return () => clearTimeout(timer);
+    }, [currentDate, events]);
+
 
     const handleCancel = () => {
         setSelectedEvent(null);
         setSelection({ start: null, end: null });
         setTempStart(null);
         setFormState(initialFormState);
-        setIsReselecting(false); // 취소 시 재선택 모드 해제
+        setIsReselecting(false);
     };
 
     const handleNavigate = (newDateOrAction) => {
@@ -77,17 +109,15 @@ const CalendarPage = () => {
         });
     };
 
-    // ✨ 문제 해결: 날짜 재선택 로직 수정
     const handleSelectSlot = useCallback(({ start, action }) => {
         if (action === 'click') {
-            // 새 일정 생성이거나, 기존 일정의 날짜를 재선택하는 경우
             if (!tempStart) {
-                if (!isReselecting) handleCancel(); // 새 일정 시작 시에만 초기화
+                if (!isReselecting) handleCancel();
                 setTempStart(start);
             } else {
                 setSelection({ start: new Date(Math.min(tempStart.getTime(), start.getTime())), end: new Date(Math.max(tempStart.getTime(), start.getTime())) });
                 setTempStart(null);
-                setIsReselecting(false); // 날짜 선택 완료 후 재선택 모드 해제
+                setIsReselecting(false);
             }
         }
     }, [tempStart, isReselecting]);
@@ -100,9 +130,8 @@ const CalendarPage = () => {
         setIsReselecting(false);
     }, []);
 
-    // 날짜 변경 시작을 위한 함수
     const handleChangeDateClick = () => {
-        setIsReselecting(true); // 재선택 모드 활성화
+        setIsReselecting(true);
         setSelection({ start: null, end: null });
         setTempStart(null);
     };
@@ -206,7 +235,12 @@ const CalendarPage = () => {
                     <Calendar
                         localizer={localizer}
                         events={events}
-                        components={{ toolbar: CustomToolbar }}
+                        // ✨ 4. Calendar에 CustomToolbar와 클래스 제거 함수를 전달합니다. ✨
+                        components={{
+                            toolbar: (props) => (
+                                <CustomToolbar {...props} onNavigationStart={handleNavigationStart} />
+                            ),
+                        }}
                         formats={formats}
                         messages={messages}
                         culture='ko'
@@ -229,7 +263,6 @@ const CalendarPage = () => {
 
                         {(selection.start || selectedEvent || tempStart) && (
                             <form onSubmit={handleSubmit} className="event-form">
-                                {/* 날짜 변경 버튼은 폼 안으로 이동 */}
                                 {selectedEvent && (
                                     <button type="button" className="action-btn change-date-btn" onClick={handleChangeDateClick}>
                                         날짜 변경
