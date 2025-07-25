@@ -1,7 +1,7 @@
 // src/calendar/useCalendarEvents.js
 
 import { useState, useCallback } from 'react';
-import axios from 'axios';
+import axiosInstance from '../api/axiosInstance';
 import format from 'date-fns/format';
 import { useNavigate } from 'react-router-dom';
 
@@ -21,7 +21,7 @@ export const useCalendarEvents = (token) => {
         const endDate = new Date(year, month + 1, 0);
 
         try {
-            const response = await axios.get('http://localhost:8080/calendar/workhistory/list', {
+            const response = await axiosInstance.get('/calendar/workhistory/list', {
                 params: { startDate: format(startDate, 'yyyy-MM-dd'), endDate: format(endDate, 'yyyy-MM-dd') },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -40,19 +40,19 @@ export const useCalendarEvents = (token) => {
     }, [token, navigate]);
 
     const saveEvent = async (newEventData) => {
-        return axios.post('http://localhost:8080/calendar/workhistory/save', newEventData, {
+        return axiosInstance.post('/calendar/workhistory/save', newEventData, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
     };
 
     const updateEvent = async (eventId, updatedEventData) => {
-        return axios.patch(`http://localhost:8080/calendar/workhistory/${eventId}`, updatedEventData, {
+        return axiosInstance.patch(`/calendar/workhistory/${eventId}`, updatedEventData, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
     };
 
     const deleteEvent = async (eventId) => {
-        return axios.delete(`http://localhost:8080/calendar/workhistory/${eventId}`, {
+        return axiosInstance.delete(`/calendar/workhistory/${eventId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
     };
