@@ -95,30 +95,31 @@ const Header = () => {
         }
     };
 
-    return (
-        <header style={headerStyle}>
-            <nav style={navStyle}>
-                <Link to="/" style={logoStyle}>
-                    <img src="/icon.png" alt="Pond 로고" style={logoImgStyle} />
-                    <span style={logoTextStyle}>Pond</span>
-                </Link>
-                <div style={navLinksStyle}>
-                    {isLoggedIn ? (
-                        // 로그인 상태일 때 보여줄 UI
-                        <button onClick={handleLogout} style={btnStyle}>
-                            로그아웃
-                        </button>
-                    ) : (
-                        // 로그아웃 상태일 때 보여줄 UI
-                        <>
-                            <Link to="/login" style={linkStyle}>로그인</Link>
-                            <Link to="/register" style={{...linkStyle, ...btnStyle}}>가입하기</Link>
-                        </>
-                    )}
-                </div>
-            </nav>
-        </header>
-    );
+        return (
+            <header style={headerStyle}>
+                <nav style={navStyle}>
+                    <Link to="/" style={logoStyle}>
+                        <img src="/icon.png" alt="Pond 로고" style={logoImgStyle} />
+                        <span style={logoTextStyle}>Pond</span>
+                    </Link>
+                    <div style={navLinksStyle}>
+                        {isLoggedIn ? (
+                            // 로그인 상태일 때
+                            <>
+                                <Link to="/calendar" style={linkStyle}>캘린더</Link>
+                                <button onClick={handleLogout} style={btnStyle}>로그아웃</button>
+                            </>
+                        ) : (
+                            // 로그아웃 상태일 때
+                            <>
+                                <Link to="/login" style={linkStyle}>로그인</Link>
+                                <Link to="/register" style={{...linkStyle, ...btnStyle}}>가입하기</Link>
+                            </>
+                        )}
+                    </div>
+                </nav>
+            </header>
+        );
 };
 
 export default Header;

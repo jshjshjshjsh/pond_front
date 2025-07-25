@@ -93,13 +93,13 @@ const LoginPage = () => {
                 // 2. 로그인 성공 후 메인 페이지 또는 대시보드로 이동
                 alert('로그인 성공!');
                 // todo: 로그인 성공 후 캘린더쪽으로 url 수정
-                window.location.href = '/';
+                window.location.href = '/calendar';
             }
         } catch (err) {
             // 요청 실패 시
             if (err.response) {
                 // 서버에서 보낸 에러 메시지가 있을 경우
-                setError(err.response.data.message || '아이디 또는 비밀번호가 올바르지 않습니다.');
+                setError('아이디 또는 비밀번호가 올바르지 않습니다.');
             } else {
                 // 네트워크 에러 등
                 setError('로그인 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');

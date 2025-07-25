@@ -1,0 +1,68 @@
+/* 캘린더 페이지 전체 컨테이너 */
+.calendar-page-container {
+    padding: 20px 40px 40px 40px;
+    font-family: 'Noto Sans KR', 'Poppins', sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* 캘린더와 입력 폼을 가로로 배치 */
+.calendar-layout-container { display: flex; gap: 30px; align-items: flex-start; }
+.calendar-wrapper { flex: 3; min-width: 0; }
+.form-wrapper { flex: 1; position: sticky; top: 20px; }
+
+/* 커스텀 툴바 스타일 */
+.custom-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding: 0 10px;
+}
+.toolbar-nav-buttons { display: flex; gap: 8px; }
+.toolbar-nav-buttons button {
+    background: white;
+    border: 1px solid #e0e0e0;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+.toolbar-nav-buttons button:hover { background-color: #f5f5f5; border-color: #ccc; }
+.toolbar-center { flex-grow: 1; text-align: center; }
+.toolbar-label { font-size: 2rem; font-weight: 700; color: #36454F; }
+
+/* 캘린더 스타일 (+ more 활성화를 위해 고정 높이 유지) */
+.rbc-calendar {
+    border-radius: 16px; box-shadow: 0 10px 35px rgba(0, 0, 0, 0.07);
+    border: none; padding: 25px; background-color: white; height: 700px !important;
+}
+.rbc-header { font-weight: 600; color: #36454F; padding: 15px 0; border-bottom: 1px solid #f0f0f0; }
+.rbc-date-cell { color: #36454F; font-weight: 500; }
+.rbc-off-range .rbc-date-cell { color: #AEAEAE !important; }
+.rbc-today { background-color: rgba(255, 218, 185, 0.3); }
+.rbc-event { z-index: 1; background-color: #008080; border-radius: 6px; padding: 5px 10px; border: none; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.rbc-btn-group button.rbc-active { background-color: #008080; color: white; border-color: #008080; }
+
+/* 일정 추가 폼 */
+.event-form-container { background-color: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 35px rgba(0, 0, 0, 0.07); }
+.event-form-container h3 { margin-top: 0; font-size: 1.6rem; color: #36454F; border-bottom: 1px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 20px; }
+.selection-display { background-color: rgba(0, 128, 128, 0.08); color: #006666; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: 500; }
+.event-form { display: flex; flex-direction: column; gap: 20px; }
+.event-form .input-group { display: flex; flex-direction: column; }
+.event-form .share-toggle span, .event-form label { color: #36454F; font-weight: 500; }
+.event-form label { margin-bottom: 8px; font-weight: 600; font-size: 0.95rem; }
+.event-form input[type="text"] { padding: 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 1rem; transition: border-color 0.2s; }
+.event-form input[type="text"]:focus { outline: none; border-color: #008080; }
+.event-form .share-toggle { display: flex; align-items: center; gap: 10px; }
+.switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
+.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+input:checked + .slider { background-color: #008080; }
+input:checked + .slider:before { transform: translateX(22px); }
+.slider.round { border-radius: 34px; }
+.slider.round:before { border-radius: 50%; }
+.event-form .submit-btn { background-color: #008080; color: white; padding: 14px; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: background-color 0.3s ease; margin-top: 10px; }
+.event-form .submit-btn:hover { background-color: #006666; }
