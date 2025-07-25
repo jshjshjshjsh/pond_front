@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../api/axiosInstance';
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
@@ -33,7 +33,7 @@ const RegisterPage = () => {
         }
 
         try {
-            const response = await axios.post('http://localhost:8080/member/register', {
+            const response = await axiosInstance.post('/member/register', {
                 sabun: formData.sabun,
                 id: formData.id,
                 pw: formData.pw,

@@ -1,35 +1,57 @@
 import axios from 'axios';
 
-// Axios 인스턴스 생성
+// 1. Axios 인스턴스 생성
 const axiosInstance = axios.create({
     baseURL: 'http://localhost:8080', // API 기본 URL
+    withCredentials: true,
 });
 
-// 응답 인터셉터 (Response Interceptor) 추가
-axiosInstance.interceptors.response.use(
-    // 응답이 성공적인 경우
-    (response) => {
-        return response;
-    },
-    // 응답 에러가 발생한 경우
-    (error) => {
-        // 백엔드에서 403 Unauthorized 응답을 보냈는지 확인
-        if (error.response && error.response.status === 403) {
-            // JWT 만료 또는 인증 실패 시 처리
-            console.error("Authentication Error: Token might be expired.");
-
-            // 1. 로컬 스토리지에서 토큰 제거
-            localStorage.removeItem('accessToken');
-
-            // 2. 사용자에게 알림
-            alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-
-            // 3. 로그인 페이지로 리디렉션
-            // window.location.href는 페이지를 새로고침하므로 React 상태가 초기화됩니다.
-            window.location.href = '/';
+// 2. 요청 인터셉터: 모든 API 요청에 토큰 자동 추가
+axiosInstance.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('accessToken');
+        if (token) {
+            config.headers['Authorization'] = `Bearer ${token}`;
         }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
 
-        // 다른 종류의 에러는 그대로 반환하여 개별 catch 블록에서 처리하도록 함
+// 3. 응답 인터셉터: 토큰 만료 시 자동 재발급
+axiosInstance.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const originalRequest = error.config;
+
+        // 401 또는 403 에러이고, 재시도한 요청이 아닐 때
+        if (error.response && (error.response.status === 401 || error.response.status === 403) && !originalRequest._retry) {
+            originalRequest._retry = true;
+
+            try {
+                // ✨ 핵심 수정사항: withCredentials: true 추가 ✨
+                // 이 옵션이 있어야 브라우저가 httpOnly 쿠키(리프레시 토큰)를 서버로 보냅니다.
+                const res = await axios.post('http://localhost:8080/login/refresh', {}, {
+                    withCredentials: true
+                });
+
+                if (res.status === 200) {
+                    const newAccessToken = res.data.accessToken;
+                    localStorage.setItem('accessToken', newAccessToken);
+
+                    // 원래 요청의 헤더를 새 토큰으로 교체 후 재시도
+                    originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+                    return axiosInstance(originalRequest);
+                }
+            } catch (refreshError) {
+                // 리프레시 토큰도 만료된 경우
+                console.error("세션이 만료되었습니다. 다시 로그인해주세요.", refreshError);
+                localStorage.removeItem('accessToken');
+                alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+                window.location.href = '/login';
+                return Promise.reject(refreshError);
+            }
+        }
         return Promise.reject(error);
     }
 );

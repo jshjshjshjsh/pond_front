@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../api/axiosInstance';
 
 // 스타일을 위한 객체 (CSS-in-JS 방식)
 const styles = {
@@ -80,7 +80,7 @@ const LoginPage = () => {
 
         try {
             // API 요청: pond_back의 /login 엔드포인트에 POST 요청
-            const response = await axios.post('http://localhost:8080/login', {
+            const response = await axiosInstance.post('/login', {
                 id: id,
                 pw: password // AuthenticationRequest.java의 필드명과 일치시켜야 함
             });
