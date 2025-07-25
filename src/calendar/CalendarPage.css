@@ -6,9 +6,20 @@
 }
 
 /* 캘린더와 입력 폼을 가로로 배치 */
-.calendar-layout-container { display: flex; gap: 30px; align-items: flex-start; }
-.calendar-wrapper { flex: 3; min-width: 0; }
-.form-wrapper { flex: 1; position: sticky; top: 20px; }
+.calendar-layout-container {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+}
+.calendar-wrapper {
+    flex: 3;
+    min-width: 0;
+}
+.form-wrapper {
+    flex: 1;
+    position: sticky;
+    top: 20px;
+}
 
 /* 커스텀 툴바 스타일 */
 .custom-toolbar {
@@ -33,11 +44,35 @@
 .toolbar-center { flex-grow: 1; text-align: center; }
 .toolbar-label { font-size: 2rem; font-weight: 700; color: #36454F; }
 
-/* 캘린더 스타일 (+ more 활성화를 위해 고정 높이 유지) */
+/* =============================================================== */
+/* ✨ 최종 높이 및 +more 문제 해결 코드 ✨                         */
+/* =============================================================== */
+
+/* 캘린더 기본 스타일 */
 .rbc-calendar {
-    border-radius: 16px; box-shadow: 0 10px 35px rgba(0, 0, 0, 0.07);
-    border: none; padding: 25px; background-color: white; height: 700px !important;
+    height: auto;
+    border-radius: 16px;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.07);
+    border: none;
+    padding: 25px;
+    background-color: white;
 }
+
+/* ✨ 여기가 핵심: '.rbc-month-row'에 '.loaded' 클래스가 추가된 후에만 스타일을 적용합니다. */
+.rbc-month-row.loaded {
+    min-height: 120px; /* 요청하신 최소 높이 */
+    height: auto;      /* 내용은 높이에 맞춰 자동으로 늘어남 */
+    overflow: visible; /* 내용이 넘쳐도 보이도록 함 */
+    flex: none;        /* 불필요한 flex 속성 초기화 */
+}
+
+/* '+more' 링크는 항상 보이지 않도록 처리합니다. */
+.rbc-show-more {
+    display: none !important;
+}
+
+/* =============================================================== */
+
 .rbc-header { font-weight: 600; color: #36454F; padding: 15px 0; border-bottom: 1px solid #f0f0f0; }
 .rbc-date-cell { color: #36454F; font-weight: 500; }
 .rbc-off-range .rbc-date-cell { color: #AEAEAE !important; }

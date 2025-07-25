@@ -12,8 +12,7 @@ function App() {
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
             <Header />
 
-            <main style={{ flex: 1 }}>
-                {/* 페이지 경로에 따라 다른 컴포넌트가 이 위치에 렌더링됩니다. */}
+            <main>
                 <Routes>
                     <Route path="/" element={<MainPage />} />
                     <Route path="/login" element={<LoginPage />} />
@@ -21,7 +20,7 @@ function App() {
                     <Route path="/calendar" element={<CalendarPage />} />
                 </Routes>
             </main>
-            {/* 2. Routes 바깥에 Footer를 배치하여 모든 페이지에 공통으로 보이게 합니다. */}
+
             <Footer />
         </div>
     );

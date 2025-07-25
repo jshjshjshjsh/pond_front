@@ -4,17 +4,15 @@ import format from 'date-fns/format';
 import parse from 'date-fns/parse';
 import startOfWeek from 'date-fns/startOfWeek';
 import getDay from 'date-fns/getDay';
-import addDays from 'date-fns/addDays';
-import enUS from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './CalendarPage.css';
+import enUS from 'date-fns/locale/en-US';
 
 const locales = { 'en-US': enUS };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
-// 커스텀 툴바 컴포넌트
 const CustomToolbar = (toolbar) => {
     const goToBack = () => toolbar.onNavigate('PREV');
     const goToNext = () => toolbar.onNavigate('NEXT');
@@ -45,6 +43,18 @@ const CalendarPage = () => {
     const navigate = useNavigate();
     const token = localStorage.getItem('accessToken');
 
+    // ✨ 여기가 핵심 1: 캘린더 데이터(events, currentDate)가 변경될 때마다 실행됩니다.
+    useEffect(() => {
+        // 모든 '.rbc-month-row' 요소를 찾습니다.
+        const monthRows = document.querySelectorAll('.rbc-month-row');
+
+        // 찾은 각 요소에 'loaded' 클래스를 추가합니다.
+        monthRows.forEach(row => {
+            row.classList.add('loaded');
+        });
+    }, [events, currentDate]); // events나 currentDate가 바뀔 때마다 이 효과를 다시 실행합니다.
+
+
     const fetchEvents = useCallback(async (date) => {
         if (!token) {
             alert('로그인이 필요합니다.');
@@ -61,11 +71,11 @@ const CalendarPage = () => {
                 params: { startDate: format(startDate, 'yyyy-MM-dd'), endDate: format(endDate, 'yyyy-MM-dd') },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            const formattedEvents = response.data.map(event => {
-                const eventEnd = new Date(event.endDate);
-                eventEnd.setHours(23, 59, 59, 999);
-                return { ...event, start: new Date(event.startDate), end: eventEnd };
-            });
+            const formattedEvents = response.data.map(event => ({
+                ...event,
+                start: new Date(event.startDate),
+                end: new Date(event.endDate)
+            }));
             setEvents(formattedEvents);
         } catch (error) {
             console.error('일정 데이터를 불러오는 데 실패했습니다.', error);
@@ -112,20 +122,13 @@ const CalendarPage = () => {
             alert('일정 제목을 입력하고 날짜를 선택해주세요.');
             return;
         }
-
-        const startDate = new Date(selection.start);
-        startDate.setHours(0, 0, 0, 0);
-        const endDate = new Date(selection.end);
-        endDate.setHours(23, 59, 59, 999);
-
         const newEvent = {
             title,
-            startDate: format(startDate, "yyyy-MM-dd'T'HH:mm:ss"),
-            endDate: format(endDate, "yyyy-MM-dd'T'HH:mm:ss"),
+            startDate: format(selection.start, "yyyy-MM-dd'T'HH:mm:ss"),
+            endDate: format(selection.end, "yyyy-MM-dd'T'HH:mm:ss"),
             isShare,
             content: title,
         };
-
         try {
             await axios.post('http://localhost:8080/calendar/workhistory/save', newEvent, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -171,8 +174,6 @@ const CalendarPage = () => {
                         selectable
                         onSelectSlot={handleSelectSlot}
                         dayPropGetter={dayPropGetter}
-                        popup
-                        dayLayoutAlgorithm={'no-overlap'}
                         components={components}
                     />
                 </div>
