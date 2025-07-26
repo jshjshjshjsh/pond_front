@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../api/axiosInstance';
 
 // 스타일 객체
 const headerStyle = {
@@ -75,7 +75,7 @@ const Header = () => {
             if (token) {
                 // 1. 서버에 로그아웃 요청을 보냅니다.
                 // Spring Security의 기본 logout은 주로 POST 요청을 처리합니다.
-                await axios.post('http://localhost:8080/logout', {}, {
+                await axiosInstance.post('/logout', {}, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -107,6 +107,7 @@ const Header = () => {
                             // 로그인 상태일 때
                             <>
                                 <Link to="/calendar" style={linkStyle}>캘린더</Link>
+                                <Link to="/admin" style={linkStyle}>⚙️</Link>
                                 <button onClick={handleLogout} style={btnStyle}>로그아웃</button>
                             </>
                         ) : (

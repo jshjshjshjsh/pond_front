@@ -8,7 +8,8 @@ const RegisterPage = () => {
         sabun: '',
         id: '',
         pw: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        role: 'ROLE_NORMAL' // 1. role 상태 추가 및 기본값 설정
     });
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -38,7 +39,7 @@ const RegisterPage = () => {
                 id: formData.id,
                 pw: formData.pw,
                 name: formData.name,
-                role: 'ROLE_NORMAL'
+                role: formData.role // 2. 하드코딩된 값 대신 상태에서 role 전송
             });
 
             if (response.status === 200) {
@@ -58,7 +59,6 @@ const RegisterPage = () => {
 
     return (
         <>
-            {/* 스타일 코드를 컴포넌트 내에 직접 포함 */}
             <style>
                 {`
                     .register-container {
@@ -105,7 +105,7 @@ const RegisterPage = () => {
                         flex-direction: column;
                     }
 
-                    .register-form .input {
+                    .register-form .input, .register-form .select { /* 4. select 스타일 추가 */
                         background-color: #FFFFFF;
                         padding: 15px;
                         margin-bottom: 20px;
@@ -143,7 +143,6 @@ const RegisterPage = () => {
                 `}
             </style>
 
-            {/* JSX 렌더링 부분 */}
             <div className="register-container">
                 <div className="register-box">
                     <Link to="/" className="logo-container">
@@ -156,6 +155,13 @@ const RegisterPage = () => {
                         <input type="text" name="id" placeholder="아이디" value={formData.id} onChange={handleChange} className="input" required />
                         <input type="password" name="pw" placeholder="비밀번호" value={formData.pw} onChange={handleChange} className="input" required />
                         <input type="password" name="confirmPassword" placeholder="비밀번호 확인" value={formData.confirmPassword} onChange={handleChange} className="input" required />
+
+                        {/* 3. 역할(ROLE) 선택을 위한 드롭다운 추가 */}
+                        <select name="role" value={formData.role} onChange={handleChange} className="select" required>
+                            <option value="ROLE_NORMAL">일반 사용자</option>
+                            <option value="ROLE_LEADER">리더</option>
+                        </select>
+
                         <button type="submit" className="register-button">가입하기</button>
                     </form>
                     {error && <p className="message error-message">{error}</p>}

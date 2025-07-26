@@ -1,11 +1,14 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Header from './common/Header';
 import Footer from './common/Footer';
 import MainPage from './MainPage';
 import LoginPage from './user/LoginPage';
 import RegisterPage from './user/RegisterPage';
 import CalendarPage from './calendar/CalendarPage';
+import AdminPage from './admin/AdminPage';
+import UserProfile from './admin/UserProfile';
+import TeamManagement from './admin/TeamManagement';
 
 function App() {
     return (
@@ -18,6 +21,12 @@ function App() {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/calendar" element={<CalendarPage />} />
+                    <Route path="/admin" element={<AdminPage />}>
+                        {/* 기본 경로(/admin) 접속 시 개인 설정 탭으로 자동 이동 */}
+                        <Route index element={<Navigate to="settings" replace />} />
+                        <Route path="settings" element={<UserProfile />} />
+                        <Route path="team" element={<TeamManagement />} />
+                    </Route>
                 </Routes>
             </main>
 
