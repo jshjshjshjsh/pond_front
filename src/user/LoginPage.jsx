@@ -92,7 +92,6 @@ const LoginPage = () => {
 
                 // 2. 로그인 성공 후 메인 페이지 또는 대시보드로 이동
                 alert('로그인 성공!');
-                // todo: 로그인 성공 후 캘린더쪽으로 url 수정
                 window.location.href = '/calendar';
             }
         } catch (err) {

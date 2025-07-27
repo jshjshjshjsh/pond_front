@@ -223,3 +223,8 @@ input:checked + .slider:before { transform: translateX(22px); }
     background-color: #e6f2ff;
     border-color: #e6f2ff;
 }
+
+.rbc-event:hover {
+    background-color: #005f5f !important;
+    cursor: pointer; /* 마우스 커서를 포인터로 변경 */
+}

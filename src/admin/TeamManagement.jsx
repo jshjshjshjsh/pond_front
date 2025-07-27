@@ -1,20 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import axiosInstance from '../api/axiosInstance'; // 설정된 axios 인스턴스 사용
+import axiosInstance from '../api/axiosInstance';
 
 const TeamManagement = () => {
     const [teamName, setTeamName] = useState('');
-    const [teams, setTeams] = useState([{ id: 1, teamName: '개발 1팀' }]); // 예시 데이터
+    const [teams, setTeams] = useState([]);
     const [selectedTeamId, setSelectedTeamId] = useState('');
-    const [members, setMembers] = useState(['']); // 멤버 사번 배열
+    const [members, setMembers] = useState(['']);
+    const [teamMembers, setTeamMembers] = useState([]);
+
+    // --- [추가] 역할을 한글로 변환하는 객체 ---
+    const roleMap = {
+        'ROLE_ADMIN': '관리자',
+        'ROLE_LEADER': '리더',
+        'ROLE_NORMAL': '일반 사용자'
+    };
+    // --- ---
+
+    const fetchTeams = async () => {
+        try {
+            const response = await axiosInstance.get('/team/leader/teams');
+            setTeams(response.data);
+        } catch (error) {
+            console.error("팀 목록 로딩 실패:", error);
+            alert("팀 목록을 불러오는 데 실패했습니다.");
+        }
+    };
+
+    const fetchTeamMembers = async () => {
+        try {
+            const response = await axiosInstance.get('/team/my-teams/members');
+            setTeamMembers(response.data);
+        } catch (error) {
+            console.error("팀원 목록 로딩 실패:", error);
+            alert("팀원 목록을 불러오는 데 실패했습니다.");
+        }
+    };
 
     useEffect(() => {
-        // TODO: 페이지 로드 시 전체 팀 목록을 불러오는 API 호출
-        // const fetchTeams = async () => { ... };
-        // fetchTeams();
+        fetchTeams();
+        fetchTeamMembers();
     }, []);
 
     const handleAddMemberInput = () => {
-        setMembers([...members, '']); // 새 입력 필드 추가
+        setMembers([...members, '']);
     };
 
     const handleRemoveMemberInput = (index) => {
@@ -31,11 +59,15 @@ const TeamManagement = () => {
     const handleTeamRegister = async (e) => {
         e.preventDefault();
         try {
-            // TeamController의 /leader/register API 호출
-            await axiosInstance.post('/team/leader/register', { teamName });
+            // 현재 로그인된 사용자의 정보를 함께 보내야 합니다.
+            // Member 정보는 토큰에서 추출하거나 별도의 API로 가져와야 합니다.
+            // 여기서는 임시로 Member 객체를 생성하여 전달합니다.
+            // 실제 구현에서는 현재 로그인한 사용자 정보를 동적으로 가져와야 합니다.
+            const currentUser = { sabun: 'current_user_sabun' }; // 예시
+            await axiosInstance.post('/team/leader/register', { teamName, member: currentUser });
             alert(`'${teamName}' 팀이 성공적으로 등록되었습니다.`);
             setTeamName('');
-            // TODO: 팀 목록 다시 불러오기
+            fetchTeams();
         } catch (error) {
             console.error("팀 등록 실패:", error);
             alert(error.response?.data?.message || "팀 등록에 실패했습니다.");
@@ -44,18 +76,17 @@ const TeamManagement = () => {
 
     const handleAddMembersToTeam = async (e) => {
         e.preventDefault();
-        const memberSabun = members.filter(sabun => sabun.trim() !== ''); // 비어있지 않은 사번만 필터링
+        const memberSabun = members.filter(sabun => sabun.trim() !== '');
         if (!selectedTeamId || memberSabun.length === 0) {
             alert("팀을 선택하고, 한 명 이상의 멤버 사번을 입력해주세요.");
             return;
         }
 
         try {
-            // TeamController의 /leader/{teamId}/members API 호출
             await axiosInstance.post(`/team/leader/${selectedTeamId}/members`, { memberSabun });
             alert("팀에 멤버가 성공적으로 등록되었습니다.");
             setMembers(['']);
-            // TODO: 해당 팀의 멤버 목록 다시 불러오기
+            fetchTeamMembers();
         } catch (error) {
             console.error("멤버 등록 실패:", error);
             alert(error.response?.data?.message || "멤버 등록에 실패했습니다.");
@@ -66,7 +97,6 @@ const TeamManagement = () => {
         <div>
             <h3>팀 관리</h3>
 
-            {/* 팀 등록 폼 */}
             <form onSubmit={handleTeamRegister}>
                 <h4>새 팀 등록</h4>
                 <div className="form-group">
@@ -85,7 +115,6 @@ const TeamManagement = () => {
 
             <hr style={{ margin: '40px 0' }} />
 
-            {/* 팀에 멤버 등록 폼 */}
             <form onSubmit={handleAddMembersToTeam}>
                 <h4>팀에 멤버 등록</h4>
                 <div className="form-group">
@@ -125,6 +154,43 @@ const TeamManagement = () => {
                 </div>
                 <button type="submit" className="submit-btn">멤버 등록</button>
             </form>
+
+            <div className="team-members-container">
+                <hr style={{ margin: '40px 0' }} />
+                <h4>소속된 팀원 목록</h4>
+                <table className="team-members-table">
+                    <thead>
+                    <tr>
+                        <th>이름</th>
+                        <th>사번</th>
+                        <th>소속 팀</th>
+                        <th>역할</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {teamMembers.length > 0 ? (
+                        teamMembers.map(member => (
+                            <tr key={member.sabun}>
+                                <td>{member.name}</td>
+                                <td>{member.sabun}</td>
+                                <td>
+                                    {/* 멤버가 속한 팀들의 이름을 콤마로 구분하여 표시 */}
+                                    {member.teams.map(team => team.teamName).join(', ')}
+                                </td>
+                                <td>
+                                    {/* roleMap을 사용하여 역할을 한글로 변환 */}
+                                    {roleMap[member.role] || member.role}
+                                </td>
+                            </tr>
+                        ))
+                    ) : (
+                        <tr>
+                            <td colSpan="4" style={{ textAlign: 'center' }}>소속된 팀원이 없습니다.</td>
+                        </tr>
+                    )}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };

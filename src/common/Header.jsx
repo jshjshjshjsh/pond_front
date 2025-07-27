@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axiosInstance from '../api/axiosInstance';
+import { IoSettingsOutline } from "react-icons/io5";
 
-// 스타일 객체
 const headerStyle = {
     padding: '20px 0',
     background: '#fdfdfd',
@@ -34,93 +33,118 @@ const logoTextStyle = {
 const navLinksStyle = {
     display: 'flex',
     alignItems: 'center',
-    gap: '16px',
-};
-const linkStyle = {
-    textDecoration: 'none',
-    color: '#778899',
-    fontWeight: '500',
-    padding: '8px 12px',
-    transition: 'color 0.3s',
-};
-const btnStyle = {
-    background: 'transparent',
-    color: '#008080',
-    border: '2px solid #008080',
-    padding: '8px 24px',
-    borderRadius: '8px',
-    fontWeight: '700',
-    cursor: 'pointer',
-    transition: 'all 0.3s',
+    gap: '10px', // 간격 살짝 조정
 };
 
+const baseLinkStyle = {
+    textDecoration: 'none',
+    fontWeight: '500',
+    padding: '8px 12px',
+    borderRadius: '8px', // 모서리를 둥글게
+    transition: 'all 0.2s ease-in-out', // 부드러운 전환 효과
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+};
 
 const Header = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [hovered, setHovered] = useState(null);
     const navigate = useNavigate();
 
-    // 컴포넌트가 렌더링될 때 로그인 상태를 확인
     useEffect(() => {
         const token = localStorage.getItem('accessToken');
-        if (token) {
-            setIsLoggedIn(true);
-        }
-    }, []);
+        setIsLoggedIn(!!token);
+    }, [navigate]);
 
-    // 로그아웃 처리 함수
-    const handleLogout = async () => {
-        const token = localStorage.getItem('accessToken');
-
-        try {
-            if (token) {
-                // 1. 서버에 로그아웃 요청을 보냅니다.
-                // Spring Security의 기본 logout은 주로 POST 요청을 처리합니다.
-                await axiosInstance.post('/logout', {}, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                console.log('서버에 로그아웃 요청을 보냈습니다.');
-            }
-        } catch (error) {
-            // 서버에 /logout 엔드포인트가 없거나 CORS 문제 등으로 에러가 발생할 수 있습니다.
-            // 클라이언트 측에서는 에러 발생 여부와 관계없이 로그아웃을 계속 진행합니다.
-            console.error('서버 로그아웃 처리 중 오류 발생:', error);
-        } finally {
-            // 2. 서버 요청 결과와 상관없이 항상 클라이언트 측의 로그아웃을 수행합니다.
-            localStorage.removeItem('accessToken');
-            setIsLoggedIn(false);
-            alert('로그아웃 되었습니다.');
-            navigate('/');
-        }
+    const handleLogout = () => {
+        localStorage.removeItem('accessToken');
+        setIsLoggedIn(false);
+        alert('로그아웃 되었습니다.');
+        navigate('/');
     };
 
-        return (
-            <header style={headerStyle}>
-                <nav style={navStyle}>
-                    <Link to="/" style={logoStyle}>
-                        <img src="/icon.png" alt="Pond 로고" style={logoImgStyle} />
-                        <span style={logoTextStyle}>Pond</span>
-                    </Link>
-                    <div style={navLinksStyle}>
-                        {isLoggedIn ? (
-                            // 로그인 상태일 때
-                            <>
-                                <Link to="/calendar" style={linkStyle}>캘린더</Link>
-                                <Link to="/admin" style={linkStyle}>⚙️</Link>
-                                <button onClick={handleLogout} style={btnStyle}>로그아웃</button>
-                            </>
-                        ) : (
-                            // 로그아웃 상태일 때
-                            <>
-                                <Link to="/login" style={linkStyle}>로그인</Link>
-                                <Link to="/register" style={{...linkStyle, ...btnStyle}}>가입하기</Link>
-                            </>
-                        )}
-                    </div>
-                </nav>
-            </header>
-        );
+    const linkStyle = (name) => ({
+        ...baseLinkStyle,
+        color: '#778899',
+        backgroundColor: hovered === name ? '#f0f0f0' : 'transparent' // 호버 시 배경색 변경
+    });
+
+    const iconLinkStyle = (name) => ({
+        ...baseLinkStyle,
+        color: '#778899',
+        fontSize: '1.5rem',
+        backgroundColor: hovered === name ? '#f0f0f0' : 'transparent'
+    });
+
+    const btnStyle = (name) => ({
+        ...baseLinkStyle,
+        background: hovered === name ? '#006666' : '#008080', // 호버 시 어두운 틸 색상
+        color: 'white',
+        border: 'none',
+        padding: '8px 24px'
+    });
+
+    return (
+        <header style={headerStyle}>
+            <nav style={navStyle}>
+                <Link to="/" style={logoStyle}>
+                    <img src="/icon.png" alt="Pond 로고" style={logoImgStyle} />
+                    <span style={logoTextStyle}>Pond</span>
+                </Link>
+                <div style={navLinksStyle}>
+                    {isLoggedIn ? (
+                        <>
+                            <Link
+                                to="/calendar"
+                                style={linkStyle('calendar')}
+                                onMouseEnter={() => setHovered('calendar')}
+                                onMouseLeave={() => setHovered(null)}
+                            >
+                                업무일지
+                            </Link>
+                            <Link
+                                to="/admin"
+                                style={iconLinkStyle('admin')}
+                                title="관리"
+                                onMouseEnter={() => setHovered('admin')}
+                                onMouseLeave={() => setHovered(null)}
+                            >
+                                <IoSettingsOutline />
+                            </Link>
+                            <button
+                                onClick={handleLogout}
+                                style={{ ...baseLinkStyle, color: '#008080', border: '2px solid #008080', backgroundColor: hovered === 'logout' ? '#f0f0f0' : 'transparent', padding: '8px 24px', cursor: 'pointer' }}
+                                onMouseEnter={() => setHovered('logout')}
+                                onMouseLeave={() => setHovered(null)}
+                            >
+                                로그아웃
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <Link
+                                to="/login"
+                                style={linkStyle('login')}
+                                onMouseEnter={() => setHovered('login')}
+                                onMouseLeave={() => setHovered(null)}
+                            >
+                                로그인
+                            </Link>
+                            <Link
+                                to="/register"
+                                style={{ ...baseLinkStyle, color: '#008080', border: '2px solid #008080', backgroundColor: hovered === 'register' ? '#f0f0f0' : 'transparent', padding: '8px 24px' }}
+                                onMouseEnter={() => setHovered('register')}
+                                onMouseLeave={() => setHovered(null)}
+                            >
+                                가입하기
+                            </Link>
+                        </>
+                    )}
+                </div>
+            </nav>
+        </header>
+    );
 };
 
 export default Header;
