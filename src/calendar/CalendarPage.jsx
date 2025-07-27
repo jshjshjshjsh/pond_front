@@ -1,5 +1,3 @@
-// src/calendar/CalendarPage.jsx
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import format from 'date-fns/format';
@@ -8,24 +6,19 @@ import startOfWeek from 'date-fns/startOfWeek';
 import getDay from 'date-fns/getDay';
 import { ko } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import './CalendarPage.css';
-
+import axiosInstance from '../api/axiosInstance';
 import { useCalendarEvents } from './useCalendarEvents';
+import './CalendarPage.css';
+import { RiSparkling2Line } from "react-icons/ri";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const locales = { 'ko': ko };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
-/**
- * ✨ 1. CustomToolbar 컴포넌트 수정 ✨
- * * 월 이동이 시작되는 시점을 알려주는 onNavigationStart 함수를 props로 받습니다.
- * 사용자가 이전/오늘/다음 버튼을 클릭하면, onNavigationStart를 먼저 실행하여
- * 'loaded' 클래스를 제거한 후, 실제 월 이동(onNavigate)을 실행합니다.
- */
 const CustomToolbar = ({ label, onNavigate, onNavigationStart }) => {
-
     const handleNavClick = (action) => {
-        onNavigationStart(); // 월 이동 시작 전 클래스 제거 함수 호출
-        onNavigate(action);  // 기존의 월 이동 함수 호출
+        onNavigationStart();
+        onNavigate(action);
     };
 
     return (
@@ -52,6 +45,16 @@ const CalendarPage = () => {
     const [formState, setFormState] = useState(initialFormState);
     const [isReselecting, setIsReselecting] = useState(false);
 
+    // --- 업무 목록 조회를 위한 상태 ---
+    const [listStartDate, setListStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [listEndDate, setListEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [aiSummary, setAiSummary] = useState('');
+
+    // --- ---
+
+    const [displayWorkHistory, setDisplayWorkHistory] = useState([]); // 화면에 보여줄 데이터
+    const [isSummarizing, setIsSummarizing] = useState(false);
+
     const token = localStorage.getItem('accessToken');
     const { events, fetchEvents, saveEvent, updateEvent, deleteEvent } = useCalendarEvents(token);
 
@@ -59,31 +62,20 @@ const CalendarPage = () => {
         fetchEvents(currentDate);
     }, [currentDate, fetchEvents]);
 
-    /**
-     * ✨ 2. 월 이동 시작 시 'loaded' 클래스를 제거하는 함수 ✨
-     * * 이 함수는 CustomToolbar의 버튼이 클릭될 때 호출됩니다.
-     */
     const handleNavigationStart = useCallback(() => {
         document.querySelectorAll('.rbc-month-row').forEach(row => {
             row.classList.remove('loaded');
         });
     }, []);
 
-    /**
-     * ✨ 3. 월 이동 완료 후 'loaded' 클래스를 추가하는 로직 ✨
-     * * 월(currentDate)이 바뀌거나 이벤트가 업데이트되면, 캘린더 렌더링이 끝난 후
-     * 'loaded' 클래스를 다시 추가하여 높이 문제를 해결합니다.
-     */
     useEffect(() => {
         const timer = setTimeout(() => {
             document.querySelectorAll('.rbc-month-row').forEach(row => {
                 row.classList.add('loaded');
             });
-        }, 10); // 미세한 지연으로 렌더링 완료를 보장합니다.
-
+        }, 10);
         return () => clearTimeout(timer);
     }, [currentDate, events]);
-
 
     const handleCancel = () => {
         setSelectedEvent(null);
@@ -179,27 +171,71 @@ const CalendarPage = () => {
         }
     };
 
-    const eventPropGetter = useCallback(
-        (event) => {
-            const isSelected = selectedEvent?.id === event.id;
-            const style = {
-                backgroundColor: '#008080',
-                color: 'white',
-                borderRadius: '6px',
-                border: '1px solid transparent',
-                boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-                transition: 'all 0.2s ease',
-            };
+    // --- 지정된 기간의 업무 목록을 조회하는 함수 ---
+    const handleFetchWorkHistoryList = async () => {
+        try {
+            const response = await axiosInstance.get('/calendar/workhistory/list', {
+                params: {
+                    startDate: listStartDate,
+                    endDate: listEndDate
+                }
+            });
+            setDisplayWorkHistory(response.data);
+        } catch (error) {
+            console.error('업무 목록 조회 실패:', error);
+            alert('업무 목록을 불러오는 데 실패했습니다.');
+        }
+    };
+    // --- ---
 
-            if (event.isShare) style.border = '2px solid #50E3C2';
-            if (isSelected) {
-                style.backgroundColor = '#005f5f';
-                style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-            }
-            return { style };
-        },
-        [selectedEvent]
-    );
+    const handleHideHistoryItem = (id) => {
+        // 실제 삭제 API를 호출하지 않고, 화면에 보여주는 리스트에서만 해당 아이템을 제거
+        setDisplayWorkHistory(prevList => prevList.filter(item => item.id !== id));
+    };
+
+    const handleAiSummary = async () => {
+        if (displayWorkHistory.length === 0) {
+            alert('요약할 업무 데이터가 없습니다. 먼저 목록을 조회해주세요.');
+            return;
+        }
+
+        setIsSummarizing(true); // 2. 로딩 시작
+        setAiSummary(''); // 이전 요약 내용 초기화
+
+        // 원본 데이터에서 제목만 추출하여 하나의 문자열로 합침
+        const titles = displayWorkHistory.map(item => item.title).join('\n');
+
+        try {
+            // 백엔드 서버에 요약 요청 (실제 AI 호출)
+            const response = await axiosInstance.post('/ai/summary', {
+                params: {
+                    requireString: titles
+                }
+            });
+
+            const summaryText = `[요약된 업무 목록]\n선택된 기간(${listStartDate} ~ ${listEndDate}) 동안 총 ${displayWorkHistory.length}개의 업무가 기록되었습니다.\n\n${response.data}`;
+            setAiSummary(summaryText);
+        } catch (error) {
+            console.error("AI 요약 실패:", error);
+            setAiSummary("AI 요약 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            alert("AI 요약 중 오류가 발생했습니다.");
+        } finally {
+            setIsSummarizing(false); // 3. 로딩 종료 (성공/실패 여부와 관계없이)
+        }
+    };
+
+    const eventPropGetter = useCallback((event) => {
+        const isSelected = selectedEvent?.id === event.id;
+        const style = { backgroundColor: '#008080', color: 'white', borderRadius: '6px', border: '1px solid transparent', boxShadow: '0 2px 5px rgba(0,0,0,0.1)', transition: 'all 0.2s ease' };
+        if (event.isShare) style.border = '2px solid #50E3C2';
+        if (isSelected) {
+            style.backgroundColor = '#005f5f';
+            style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+        }
+        return { style };
+    }, [selectedEvent]);
+
+    // Access your API key as an environment variable (see "Set up your API key" above)
 
     const dayPropGetter = useCallback((date) => {
         const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -220,12 +256,7 @@ const CalendarPage = () => {
 
     const { formats, messages } = useMemo(() => ({
         formats: { monthHeaderFormat: 'yyyy년 MMMM', dayHeaderFormat: 'eee' },
-        messages: {
-            today: '오늘', previous: '이전', next: '다음', month: '월',
-            week: '주', day: '일', agenda: '일정',
-            noEventsInRange: '해당 기간에 일정이 없습니다.',
-            showMore: total => `+${total}개 더보기`,
-        }
+        messages: { today: '오늘', previous: '이전', next: '다음', month: '월', week: '주', day: '일', agenda: '일정', noEventsInRange: '해당 기간에 일정이 없습니다.', showMore: total => `+${total}개 더보기` }
     }), []);
 
     return (
@@ -235,12 +266,7 @@ const CalendarPage = () => {
                     <Calendar
                         localizer={localizer}
                         events={events}
-                        // ✨ 4. Calendar에 CustomToolbar와 클래스 제거 함수를 전달합니다. ✨
-                        components={{
-                            toolbar: (props) => (
-                                <CustomToolbar {...props} onNavigationStart={handleNavigationStart} />
-                            ),
-                        }}
+                        components={{ toolbar: (props) => (<CustomToolbar {...props} onNavigationStart={handleNavigationStart} />) }}
                         formats={formats}
                         messages={messages}
                         culture='ko'
@@ -260,14 +286,9 @@ const CalendarPage = () => {
                     <div className="event-form-container">
                         <h3>{selectedEvent ? '일정 수정' : '새 일정 추가'}</h3>
                         <p className="selection-display"><strong>{renderSelectionText()}</strong></p>
-
                         {(selection.start || selectedEvent || tempStart) && (
                             <form onSubmit={handleSubmit} className="event-form">
-                                {selectedEvent && (
-                                    <button type="button" className="action-btn change-date-btn" onClick={handleChangeDateClick}>
-                                        날짜 변경
-                                    </button>
-                                )}
+                                {selectedEvent && (<button type="button" className="action-btn change-date-btn" onClick={handleChangeDateClick}>날짜 변경</button>)}
                                 <div className="input-group">
                                     <label htmlFor="title">일정 제목</label>
                                     <input type="text" id="title" name="title" value={formState.title} onChange={handleFormChange} placeholder="무엇을 하셨나요?" required />
@@ -298,6 +319,74 @@ const CalendarPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* --- 업무 목록 조회 섹션 JSX --- */}
+            <div className="work-history-list-container">
+                <h3>업무 목록 조회</h3>
+                <div className="date-range-selector">
+                    <div className="input-group">
+                        <label htmlFor="list-start-date">시작일</label>
+                        <input
+                            type="date"
+                            id="list-start-date"
+                            value={listStartDate}
+                            onChange={(e) => setListStartDate(e.target.value)}
+                        />
+                    </div>
+                    <div className="input-group">
+                        <label htmlFor="list-end-date">종료일</label>
+                        <input
+                            type="date"
+                            id="list-end-date"
+                            value={listEndDate}
+                            onChange={(e) => setListEndDate(e.target.value)}
+                        />
+                    </div>
+                    <button onClick={handleFetchWorkHistoryList} className="fetch-list-btn">
+                        조회
+                    </button>
+                    <button onClick={handleAiSummary} className="ai-summary-btn" disabled={isSummarizing}>
+                        {isSummarizing ? (
+                            <>
+                                <span className="spinner"></span>
+                                요약 중...
+                            </>
+                        ) : (
+                            <>
+                                <RiSparkling2Line/>
+                                AI 요약하기
+                            </>
+                        )}
+                    </button>
+                </div>
+                <div className="history-results-grid">
+                    {displayWorkHistory.length > 0 ? (
+                        displayWorkHistory.map(item => (
+                            <div key={item.id} className="history-item-label">
+                                <span className="date">{format(new Date(item.startDate), 'MM/dd')}</span>
+                                <span>{item.title}</span>
+                                <button
+                                    className="delete-history-item-btn"
+                                    onClick={() => handleHideHistoryItem(item.id)}
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        ))
+                    ) : (
+                        <p>해당 기간에 조회된 업무가 없습니다.</p>
+                    )}
+                </div>
+
+                <div className="ai-summary-container">
+                    <textarea
+                        className="ai-summary-textarea"
+                        value={aiSummary}
+                        placeholder="'AI 요약하기' 버튼을 클릭하면 이곳에 결과가 표시됩니다."
+                    />
+                </div>
+            </div>
+            {/* --- --- */}
         </div>
     );
 };
