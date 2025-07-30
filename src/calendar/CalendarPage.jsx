@@ -10,7 +10,7 @@ import axiosInstance from '../api/axiosInstance';
 import { useCalendarEvents } from './useCalendarEvents';
 import './CalendarPage.css';
 import { RiSparkling2Line } from "react-icons/ri";
-import { jwtDecode } from 'jwt-decode'; // ✨ JWT 디코딩 라이브러리 import
+import { jwtDecode } from 'jwt-decode'; //  JWT 디코딩 라이브러리 import
 
 const locales = { 'ko': ko };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
@@ -55,13 +55,13 @@ const CalendarPage = () => {
     const [displayWorkHistory, setDisplayWorkHistory] = useState([]);
     const [isSummarizing, setIsSummarizing] = useState(false);
 
-    // ✨ 현재 로그인한 사용자 정보를 저장할 상태
+    //  현재 로그인한 사용자 정보를 저장할 상태
     const [currentUser, setCurrentUser] = useState(null);
 
     const token = localStorage.getItem('accessToken');
     const { events, fetchEvents, saveEvent, updateEvent, deleteEvent } = useCalendarEvents(token);
 
-    // ✨ 컴포넌트 마운트 시 토큰에서 사용자 정보 추출
+    //  컴포넌트 마운트 시 토큰에서 사용자 정보 추출
     useEffect(() => {
         if (token) {
             try {
@@ -79,14 +79,14 @@ const CalendarPage = () => {
 
 
     const fetchSavedSummaries = useCallback(async (date) => {
-        // ✨ currentUser 정보가 없으면 함수를 실행하지 않음
+        //  currentUser 정보가 없으면 함수를 실행하지 않음
         if (!currentUser) return;
 
         try {
             const year = date.getFullYear();
             const month = date.getMonth() + 1;
 
-            // ✨ 사용자의 역할에 따라 다른 API 엔드포인트 결정
+            //  사용자의 역할에 따라 다른 API 엔드포인트 결정
             const url = currentUser.role.includes('LEADER')
                 ? '/calendar/leader/worksummary/list'
                 : '/calendar/worksummary/list';
@@ -98,12 +98,12 @@ const CalendarPage = () => {
         } catch (error) {
             console.error('저장된 요약 목록 조회 실패:', error);
         }
-    }, [currentUser]); // ✨ currentUser가 변경될 때마다 함수를 재생성
+    }, [currentUser]); //  currentUser가 변경될 때마다 함수를 재생성
 
 
     useEffect(() => {
         fetchEvents(currentDate);
-        if (currentUser) { // ✨ currentUser가 설정된 후에 요약 목록을 불러오도록 함
+        if (currentUser) { //  currentUser가 설정된 후에 요약 목록을 불러오도록 함
             fetchSavedSummaries(summaryDate);
         }
     }, [currentDate, fetchEvents, summaryDate, fetchSavedSummaries, currentUser]);
@@ -472,7 +472,7 @@ const CalendarPage = () => {
                 <div className="summary-list">
                     {savedSummaries.length > 0 ? (
                         savedSummaries.map(summary => {
-                            // ✨ 현재 사용자가 요약의 소유자인지 확인
+                            //  현재 사용자가 요약의 소유자인지 확인
                             const isOwner = currentUser && currentUser.id === summary.member.id;
                             return (
                                 <div key={summary.id} className="summary-item">
@@ -481,14 +481,14 @@ const CalendarPage = () => {
                                             <strong>{summary.member.name}</strong>
                                             <span
                                                 className={`share-status ${summary.isShare ? 'shared' : 'private'} ${isOwner ? 'clickable' : ''}`}
-                                                // ✨ 소유자일 경우에만 onClick 이벤트 핸들러 연결
+                                                //  소유자일 경우에만 onClick 이벤트 핸들러 연결
                                                 onClick={isOwner ? () => handleToggleShare(summary) : null}
                                                 title={isOwner ? "클릭하여 공유 상태 변경" : null}
                                             >
                                                 {summary.isShare ? '공유됨' : '비공개'}
                                             </span>
                                         </div>
-                                        {/* ✨ 소유자일 경우에만 삭제 버튼 렌더링 */}
+                                        {/*  소유자일 경우에만 삭제 버튼 렌더링 */}
                                         {isOwner && (
                                             <button className="delete-summary-btn" onClick={() => handleDeleteSummary(summary.id)}>
                                                 ×
