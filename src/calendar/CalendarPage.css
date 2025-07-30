@@ -408,3 +408,171 @@ font-size: 1rem;
     animation: spinner-border .75s linear infinite;
 }
 /* --- --- */
+
+.ai-summary-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.save-summary-btn {
+    background-color: #008080;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.save-summary-btn:hover {
+    background-color: #006666;
+}
+
+
+/* 월별 요약 조회 섹션 */
+.work-summary-container {
+    background-color: white;
+    padding: 30px;
+    margin-top: 30px;
+    border-radius: 16px;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.07);
+}
+
+.work-summary-container h3 {
+    margin-top: 0;
+    font-size: 1.6rem;
+    color: #36454F;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.summary-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.summary-controls input[type="month"] {
+    padding: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.summary-controls button {
+    background-color: #f0f0f0;
+    border: 1px solid #e0e0e0;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.summary-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.summary-item {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+}
+
+.summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.summary-header strong {
+    font-size: 1.1rem;
+    color: #36454F;
+}
+
+.summary-info {
+    display: flex;
+    align-items: center;
+    gap: 12px; /* 이름과 공유 라벨 사이의 간격 */
+}
+
+.share-status {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.share-status:hover {
+    transform: scale(1.05);
+}
+
+.share-status.shared {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.share-status.private {
+    background-color: #e2e3e5;
+    color: #383d41;
+}
+
+.summary-content {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: #495057;
+    line-height: 1.6;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.delete-summary-btn {
+    background: none;
+    border: none;
+    color: #a0a0a0;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.summary-item:hover .delete-summary-btn {
+    opacity: 1;
+}
+
+.delete-summary-btn:hover {
+    color: #dc3545;
+    background-color: #f0f0f0;
+}
+.share-status {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: transform 0.2s ease;
+}
+
+/* ✨ 소유자가 수정할 수 있는 공유 라벨에만 커서 및 호버 효과 적용 */
+.share-status.clickable {
+    cursor: pointer;
+}
+
+.share-status.clickable:hover {
+    transform: scale(1.05);
+}

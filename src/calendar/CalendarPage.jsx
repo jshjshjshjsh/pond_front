@@ -10,7 +10,7 @@ import axiosInstance from '../api/axiosInstance';
 import { useCalendarEvents } from './useCalendarEvents';
 import './CalendarPage.css';
 import { RiSparkling2Line } from "react-icons/ri";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { jwtDecode } from 'jwt-decode'; // ✨ JWT 디코딩 라이브러리 import
 
 const locales = { 'ko': ko };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
@@ -45,22 +45,68 @@ const CalendarPage = () => {
     const [formState, setFormState] = useState(initialFormState);
     const [isReselecting, setIsReselecting] = useState(false);
 
-    // --- 업무 목록 조회를 위한 상태 ---
     const [listStartDate, setListStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [listEndDate, setListEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [aiSummary, setAiSummary] = useState('');
 
-    // --- ---
-
-    const [displayWorkHistory, setDisplayWorkHistory] = useState([]); // 화면에 보여줄 데이터
+    const [savedSummaries, setSavedSummaries] = useState([]);
+    const [isShareSummary, setIsShareSummary] = useState(true);
+    const [summaryDate, setSummaryDate] = useState(new Date());
+    const [displayWorkHistory, setDisplayWorkHistory] = useState([]);
     const [isSummarizing, setIsSummarizing] = useState(false);
+
+    // ✨ 현재 로그인한 사용자 정보를 저장할 상태
+    const [currentUser, setCurrentUser] = useState(null);
 
     const token = localStorage.getItem('accessToken');
     const { events, fetchEvents, saveEvent, updateEvent, deleteEvent } = useCalendarEvents(token);
 
+    // ✨ 컴포넌트 마운트 시 토큰에서 사용자 정보 추출
+    useEffect(() => {
+        if (token) {
+            try {
+                const decoded = jwtDecode(token);
+                // Spring Security 권한(auth)과 사용자 ID(sub)를 상태에 저장
+                setCurrentUser({
+                    id: decoded.sub, // 'sub' 클레임에 사용자 ID(사번)가 있다고 가정
+                    role: decoded.auth
+                });
+            } catch (error) {
+                console.error("토큰 디코딩 실패:", error);
+            }
+        }
+    }, [token]);
+
+
+    const fetchSavedSummaries = useCallback(async (date) => {
+        // ✨ currentUser 정보가 없으면 함수를 실행하지 않음
+        if (!currentUser) return;
+
+        try {
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+
+            // ✨ 사용자의 역할에 따라 다른 API 엔드포인트 결정
+            const url = currentUser.role.includes('LEADER')
+                ? '/calendar/leader/worksummary/list'
+                : '/calendar/worksummary/list';
+
+            const response = await axiosInstance.get(url, {
+                params: { year, month }
+            });
+            setSavedSummaries(response.data);
+        } catch (error) {
+            console.error('저장된 요약 목록 조회 실패:', error);
+        }
+    }, [currentUser]); // ✨ currentUser가 변경될 때마다 함수를 재생성
+
+
     useEffect(() => {
         fetchEvents(currentDate);
-    }, [currentDate, fetchEvents]);
+        if (currentUser) { // ✨ currentUser가 설정된 후에 요약 목록을 불러오도록 함
+            fetchSavedSummaries(summaryDate);
+        }
+    }, [currentDate, fetchEvents, summaryDate, fetchSavedSummaries, currentUser]);
 
     const handleNavigationStart = useCallback(() => {
         document.querySelectorAll('.rbc-month-row').forEach(row => {
@@ -171,7 +217,6 @@ const CalendarPage = () => {
         }
     };
 
-    // --- 지정된 기간의 업무 목록을 조회하는 함수 ---
     const handleFetchWorkHistoryList = async () => {
         try {
             const response = await axiosInstance.get('/calendar/workhistory/list', {
@@ -186,10 +231,8 @@ const CalendarPage = () => {
             alert('업무 목록을 불러오는 데 실패했습니다.');
         }
     };
-    // --- ---
 
     const handleHideHistoryItem = (id) => {
-        // 실제 삭제 API를 호출하지 않고, 화면에 보여주는 리스트에서만 해당 아이템을 제거
         setDisplayWorkHistory(prevList => prevList.filter(item => item.id !== id));
     };
 
@@ -199,14 +242,12 @@ const CalendarPage = () => {
             return;
         }
 
-        setIsSummarizing(true); // 2. 로딩 시작
-        setAiSummary(''); // 이전 요약 내용 초기화
+        setIsSummarizing(true);
+        setAiSummary('');
 
-        // 원본 데이터에서 제목만 추출하여 하나의 문자열로 합침
         const titles = displayWorkHistory.map(item => item.title).join('\n');
 
         try {
-            // 백엔드 서버에 요약 요청 (실제 AI 호출)
             const response = await axiosInstance.post('/ai/summary', {
                 params: {
                     requireString: titles
@@ -220,7 +261,59 @@ const CalendarPage = () => {
             setAiSummary("AI 요약 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
             alert("AI 요약 중 오류가 발생했습니다.");
         } finally {
-            setIsSummarizing(false); // 3. 로딩 종료 (성공/실패 여부와 관계없이)
+            setIsSummarizing(false);
+        }
+    };
+
+    const handleSaveSummary = async () => {
+        if (!aiSummary.trim()) {
+            alert('저장할 요약 내용이 없습니다.');
+            return;
+        }
+
+        const year = new Date(listStartDate).getFullYear();
+        const month = new Date(listStartDate).getMonth() + 1;
+
+        const summaryData = {
+            year,
+            month,
+            summary: aiSummary,
+            isShare: isShareSummary,
+        };
+
+        try {
+            await axiosInstance.post('/calendar/worksummary', summaryData);
+            alert('요약이 성공적으로 저장되었습니다.');
+            setAiSummary('');
+            fetchSavedSummaries(summaryDate);
+        } catch (error) {
+            console.error("AI 요약 저장 실패:", error);
+            alert("AI 요약 저장 중 오류가 발생했습니다.");
+        }
+    };
+
+    const handleDeleteSummary = async (summaryId) => {
+        if (!window.confirm('정말로 이 요약을 삭제하시겠습니까?')) return;
+        try {
+            await axiosInstance.delete(`/calendar/worksummary/${summaryId}`);
+            alert('요약이 삭제되었습니다.');
+            fetchSavedSummaries(summaryDate);
+        } catch (error) {
+            console.error("요약 삭제 실패:", error);
+            alert(error.response?.data?.message || "요약 삭제 중 오류가 발생했습니다.");
+        }
+    };
+
+    const handleToggleShare = async (summary) => {
+        try {
+            await axiosInstance.patch('/calendar/worksummary', {
+                id: summary.id,
+                isShare: !summary.isShare
+            });
+            fetchSavedSummaries(summaryDate);
+        } catch (error) {
+            console.error("공유 상태 변경 실패:", error);
+            alert("공유 상태 변경 중 오류가 발생했습니다.");
         }
     };
 
@@ -234,8 +327,6 @@ const CalendarPage = () => {
         }
         return { style };
     }, [selectedEvent]);
-
-    // Access your API key as an environment variable (see "Set up your API key" above)
 
     const dayPropGetter = useCallback((date) => {
         const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -320,42 +411,23 @@ const CalendarPage = () => {
                 </div>
             </div>
 
-            {/* --- 업무 목록 조회 섹션 JSX --- */}
             <div className="work-history-list-container">
                 <h3>업무 목록 조회</h3>
                 <div className="date-range-selector">
                     <div className="input-group">
                         <label htmlFor="list-start-date">시작일</label>
-                        <input
-                            type="date"
-                            id="list-start-date"
-                            value={listStartDate}
-                            onChange={(e) => setListStartDate(e.target.value)}
-                        />
+                        <input type="date" id="list-start-date" value={listStartDate} onChange={(e) => setListStartDate(e.target.value)} />
                     </div>
                     <div className="input-group">
                         <label htmlFor="list-end-date">종료일</label>
-                        <input
-                            type="date"
-                            id="list-end-date"
-                            value={listEndDate}
-                            onChange={(e) => setListEndDate(e.target.value)}
-                        />
+                        <input type="date" id="list-end-date" value={listEndDate} onChange={(e) => setListEndDate(e.target.value)} />
                     </div>
-                    <button onClick={handleFetchWorkHistoryList} className="fetch-list-btn">
-                        조회
-                    </button>
+                    <button onClick={handleFetchWorkHistoryList} className="fetch-list-btn">조회</button>
                     <button onClick={handleAiSummary} className="ai-summary-btn" disabled={isSummarizing}>
                         {isSummarizing ? (
-                            <>
-                                <span className="spinner"></span>
-                                요약 중...
-                            </>
+                            <><span className="spinner"></span> 요약 중...</>
                         ) : (
-                            <>
-                                <RiSparkling2Line/>
-                                AI 요약하기
-                            </>
+                            <><RiSparkling2Line/> AI 요약하기</>
                         )}
                     </button>
                 </div>
@@ -365,32 +437,75 @@ const CalendarPage = () => {
                             <div key={item.id} className="history-item-label">
                                 <span className="date">{format(new Date(item.startDate), 'MM/dd')}</span>
                                 <span>{item.title}</span>
-                                <button
-                                    className="delete-history-item-btn"
-                                    onClick={() => handleHideHistoryItem(item.id)}
-                                >
-                                    ×
-                                </button>
+                                <button className="delete-history-item-btn" onClick={() => handleHideHistoryItem(item.id)}>×</button>
                             </div>
                         ))
-                    ) : (
-                        <p>해당 기간에 조회된 업무가 없습니다.</p>
-                    )}
+                    ) : (<p>해당 기간에 조회된 업무가 없습니다.</p>)}
                 </div>
-
                 <div className="ai-summary-container">
                     <textarea
                         className="ai-summary-textarea"
                         value={aiSummary}
                         placeholder="'AI 요약하기' 버튼을 클릭하면 이곳에 결과가 표시됩니다."
                     />
+                    {aiSummary && (
+                        <div className="ai-summary-actions">
+                            <div className="share-toggle">
+                                <span>비공개</span>
+                                <label className="switch">
+                                    <input type="checkbox" checked={isShareSummary} onChange={(e) => setIsShareSummary(e.target.checked)} />
+                                    <span className="slider round"></span>
+                                </label>
+                                <span>팀 공유</span>
+                            </div>
+                            <button onClick={handleSaveSummary} className="save-summary-btn">요약 저장</button>
+                        </div>
+                    )}
                 </div>
             </div>
-            {/* --- --- */}
+
+            <div className="work-summary-container">
+                <h3>월별 업무 요약</h3>
+                <div className="summary-controls">
+                    <input type="month" value={format(summaryDate, 'yyyy-MM')} onChange={(e) => setSummaryDate(new Date(e.target.value))} />
+                </div>
+                <div className="summary-list">
+                    {savedSummaries.length > 0 ? (
+                        savedSummaries.map(summary => {
+                            // ✨ 현재 사용자가 요약의 소유자인지 확인
+                            const isOwner = currentUser && currentUser.id === summary.member.id;
+                            return (
+                                <div key={summary.id} className="summary-item">
+                                    <div className="summary-header">
+                                        <div className="summary-info">
+                                            <strong>{summary.member.name}</strong>
+                                            <span
+                                                className={`share-status ${summary.isShare ? 'shared' : 'private'} ${isOwner ? 'clickable' : ''}`}
+                                                // ✨ 소유자일 경우에만 onClick 이벤트 핸들러 연결
+                                                onClick={isOwner ? () => handleToggleShare(summary) : null}
+                                                title={isOwner ? "클릭하여 공유 상태 변경" : null}
+                                            >
+                                                {summary.isShare ? '공유됨' : '비공개'}
+                                            </span>
+                                        </div>
+                                        {/* ✨ 소유자일 경우에만 삭제 버튼 렌더링 */}
+                                        {isOwner && (
+                                            <button className="delete-summary-btn" onClick={() => handleDeleteSummary(summary.id)}>
+                                                ×
+                                            </button>
+                                        )}
+                                    </div>
+                                    <pre className="summary-content">{summary.summary}</pre>
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <p>해당 월에 저장된 요약이 없습니다.</p>
+                    )}
+                </div>
+            </div>
         </div>
     );
 };
 
 export default CalendarPage;
-// todo: 본인의 월별 공유 데이터 조회 (현재 월의 기본 값을 조회해오고, 년도+월을 선택할 수 있게 추가)
-// todo: 업무 목록 조회 화면 밑에 기록들을 조회할 수 있게 추가
