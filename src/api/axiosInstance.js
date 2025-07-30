@@ -45,9 +45,8 @@ axiosInstance.interceptors.response.use(
                 }
             } catch (refreshError) {
                 // 리프레시 토큰도 만료된 경우
-                console.error("세션이 만료되었습니다. 다시 로그인해주세요.", refreshError);
                 localStorage.removeItem('accessToken');
-                alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+                localStorage.removeItem('refreshToken');
                 window.location.href = '/login';
                 return Promise.reject(refreshError);
             }

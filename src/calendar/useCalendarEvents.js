@@ -10,11 +10,6 @@ export const useCalendarEvents = (token) => {
     const navigate = useNavigate();
 
     const fetchEvents = useCallback(async (date) => {
-        if (!token) {
-            alert('로그인이 필요합니다.');
-            navigate('/login');
-            return;
-        }
         const year = date.getFullYear();
         const month = date.getMonth();
         const startDate = new Date(year, month, 1);
@@ -23,7 +18,6 @@ export const useCalendarEvents = (token) => {
         try {
             const response = await axiosInstance.get('/calendar/workhistory/list', {
                 params: { startDate: format(startDate, 'yyyy-MM-dd'), endDate: format(endDate, 'yyyy-MM-dd') },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
 
             const formattedEvents = response.data.map(event => ({
@@ -41,19 +35,18 @@ export const useCalendarEvents = (token) => {
 
     const saveEvent = async (newEventData) => {
         return axiosInstance.post('/calendar/workhistory/save', newEventData, {
-            headers: { 'Authorization': `Bearer ${token}` }
         });
     };
 
     const updateEvent = async (eventId, updatedEventData) => {
         return axiosInstance.patch(`/calendar/workhistory/${eventId}`, updatedEventData, {
-            headers: { 'Authorization': `Bearer ${token}` }
+
         });
     };
 
     const deleteEvent = async (eventId) => {
         return axiosInstance.delete(`/calendar/workhistory/${eventId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+
         });
     };
 

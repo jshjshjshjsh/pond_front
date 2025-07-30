@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { IoSettingsOutline } from "react-icons/io5";
+import axiosInstance from '../api/axiosInstance';
 
 const headerStyle = {
     padding: '20px 0',
@@ -57,11 +58,20 @@ const Header = () => {
         setIsLoggedIn(!!token);
     }, [navigate]);
 
-    const handleLogout = () => {
-        localStorage.removeItem('accessToken');
-        setIsLoggedIn(false);
-        alert('로그아웃 되었습니다.');
-        navigate('/');
+    const handleLogout = async () => {
+        try {
+            // 백엔드의 로그아웃 API 호출
+            await axiosInstance.get('/logout');
+        } catch (error) {
+            console.error('로그아웃 중 에러 발생:', error);
+        } finally {
+            // API 호출 성공/실패와 관계없이 프론트엔드 상태 정리
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            setIsLoggedIn(false);
+            alert('로그아웃 되었습니다.');
+            navigate('/');
+        }
     };
 
     const linkStyle = (name) => ({
@@ -75,14 +85,6 @@ const Header = () => {
         color: '#778899',
         fontSize: '1.5rem',
         backgroundColor: hovered === name ? '#f0f0f0' : 'transparent'
-    });
-
-    const btnStyle = (name) => ({
-        ...baseLinkStyle,
-        background: hovered === name ? '#006666' : '#008080', // 호버 시 어두운 틸 색상
-        color: 'white',
-        border: 'none',
-        padding: '8px 24px'
     });
 
     return (

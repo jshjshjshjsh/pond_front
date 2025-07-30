@@ -89,7 +89,7 @@
 
 .rbc-header { font-weight: 600; color: #36454F; padding: 15px 0; border-bottom: 1px solid #f0f0f0; }
 .rbc-date-cell { color: #36454F; font-weight: 500; }
-.rbc-off-range .rbc-date-cell { color: #AEAEAE !important; }
+.rbc-off-range { color: #AEAEAE !important; }
 .rbc-today { background-color: rgba(255, 218, 185, 0.3); }
 .rbc-event { z-index: 1; background-color: #008080; border-radius: 6px; padding: 5px 10px; border: none; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 .rbc-btn-group button.rbc-active { background-color: #008080; color: white; border-color: #008080; }
