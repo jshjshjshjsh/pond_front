@@ -9,6 +9,7 @@ import CalendarPage from './calendar/CalendarPage';
 import AdminPage from './admin/AdminPage';
 import UserProfile from './admin/UserProfile';
 import TeamManagement from './admin/TeamManagement';
+import NotFoundPage from './common/NotFoundPage';
 
 function App() {
     return (
@@ -27,6 +28,7 @@ function App() {
                         <Route path="settings" element={<UserProfile />} />
                         <Route path="team" element={<TeamManagement />} />
                     </Route>
+                    <Route path="*" element={<NotFoundPage />} />
                 </Routes>
             </main>
 
