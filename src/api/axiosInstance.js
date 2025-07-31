@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // 1. Axios 인스턴스 생성
 const axiosInstance = axios.create({
-    baseURL: 'http://localhost:8080', // API 기본 URL
+    baseURL: '/api', // API 기본 URL
     withCredentials: true,
 });
 
@@ -31,7 +31,7 @@ axiosInstance.interceptors.response.use(
             try {
                 // ✨ 핵심 수정사항: withCredentials: true 추가 ✨
                 // 이 옵션이 있어야 브라우저가 httpOnly 쿠키(리프레시 토큰)를 서버로 보냅니다.
-                const res = await axios.post('http://localhost:8080/login/refresh', {}, {
+                const res = await axios.post('/api/login/refresh', {}, {
                     withCredentials: true
                 });
 
