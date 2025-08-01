@@ -1,0 +1,41 @@
+name: Docker Image CI
+
+# main 브랜치에 push 이벤트가 발생했을 때 이 워크플로를 실행합니다.
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest # 이 job은 최신 우분투 환경에서 실행됩니다.
+
+    # job에 필요한 권한을 설정합니다. contents:read는 레포지토리 코드를 읽기 위함이고,
+    # packages:write는 ghcr.io에 패키지(Docker 이미지)를 쓰기 위함입니다.
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      # 1. 레포지토리 코드 체크아웃
+      # 현재 레포지토리의 코드를 워크플로가 실행되는 가상 환경으로 가져옵니다.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. GitHub Container Registry (ghcr.io)에 로그인
+      # 자동으로 생성되는 GITHUB_TOKEN을 사용하여 ghcr.io에 인증합니다.
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 3. Docker 이미지 빌드 및 푸시
+      # Dockerfile을 사용하여 이미지를 빌드하고 ghcr.io에 푸시합니다.
+      # 이미지 태그는 "ghcr.io/소유자/레포지토리명:latest" 형식으로 생성됩니다.
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository }}:latest
