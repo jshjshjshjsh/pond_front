@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { IoSettingsOutline } from "react-icons/io5";
-import axiosInstance from '../api/axiosInstance';
+import axiosInstance from '../api/axiosInstance.js';
 
 const headerStyle = {
     padding: '20px 0',

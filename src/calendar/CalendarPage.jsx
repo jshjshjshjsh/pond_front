@@ -6,7 +6,7 @@ import startOfWeek from 'date-fns/startOfWeek';
 import getDay from 'date-fns/getDay';
 import { ko } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import axiosInstance from '../api/axiosInstance';
+import axiosInstance from '../api/axiosInstance.js';
 import { useCalendarEvents } from './useCalendarEvents';
 import './CalendarPage.css';
 import { RiSparkling2Line } from "react-icons/ri";

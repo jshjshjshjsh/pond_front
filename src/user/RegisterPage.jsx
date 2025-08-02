@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axiosInstance from '../api/axiosInstance';
+import axiosInstance from '../api/axiosInstance.js';
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({

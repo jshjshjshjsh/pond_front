@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axiosInstance from '../api/axiosInstance'; // axios 인스턴스 import
+import axiosInstance from '../api/axiosInstance.js'; // axios 인스턴스 import
 
 const UserProfile = () => {
     const [userData, setUserData] = useState({

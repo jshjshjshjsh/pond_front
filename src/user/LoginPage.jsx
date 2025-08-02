@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axiosInstance from '../api/axiosInstance';
+import axiosInstance from '../api/axiosInstance.js';
 
 // 스타일을 위한 객체 (CSS-in-JS 방식)
 const styles = {
