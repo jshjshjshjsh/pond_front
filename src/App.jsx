@@ -1,15 +1,15 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Header from './common/Header';
-import Footer from './common/Footer';
-import MainPage from './MainPage';
-import LoginPage from './user/LoginPage';
-import RegisterPage from './user/RegisterPage';
-import CalendarPage from './calendar/CalendarPage';
-import AdminPage from './admin/AdminPage';
-import UserProfile from './admin/UserProfile';
-import TeamManagement from './admin/TeamManagement';
-import NotFoundPage from './common/NotFoundPage';
+import Header from './common/Header.jsx';
+import Footer from './common/Footer.jsx';
+import MainPage from './MainPage.jsx';
+import LoginPage from './user/LoginPage.jsx';
+import RegisterPage from './user/RegisterPage.jsx';
+import CalendarPage from './calendar/CalendarPage.jsx';
+import AdminPage from './admin/AdminPage.jsx';
+import UserProfile from './admin/UserProfile.jsx';
+import TeamManagement from './admin/TeamManagement.jsx';
+import NotFoundPage from './common/NotFoundPage.jsx';
 
 function App() {
     return (

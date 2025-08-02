@@ -1,7 +1,7 @@
 // src/calendar/useCalendarEvents.js
 
 import { useState, useCallback } from 'react';
-import axiosInstance from '../api/axiosInstance';
+import axiosInstance from '../api/axiosInstance.js';
 import format from 'date-fns/format';
 import { useNavigate } from 'react-router-dom';
 
