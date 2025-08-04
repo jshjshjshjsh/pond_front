@@ -33,7 +33,7 @@ function MainPage() {
                     <div className="hero-content">
                       <h1>업무 보고, 이제 달력에 기록하고 팀과 공유하세요.</h1>
                       <p>
-                        Pond는 매월 수행한 업무를 캘린더에 간편하게 기록하고, 팀 단위로 쉽게 공유하여<br />업무 보고서 작성을 혁신하는 프로젝트입니다.
+                        Pond는 매월 수행한 업무를 캘린더에 간편하게 기록하고, 팀 단위로 쉽게 공유하여<br />업무 보고서 작성의 노고를 줄여줍니다.
                       </p>
                         <Link to={isLoggedIn ? "/calendar" : "/register"} className="cta-button animated button">
                             시작하기
